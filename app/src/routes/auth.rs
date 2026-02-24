@@ -1,3 +1,4 @@
+use crate::AUTH_TAG;
 use crate::AppState;
 use crate::entity::tokens;
 use axum::{Json, extract::State, http::StatusCode, routing::post};
@@ -24,8 +25,9 @@ pub struct AuthRequest {
 ///
 /// Returns a newly generated cryptographically secure random bearer token.
 #[utoipa::path(
-    post,
+    get,
     path = "/token",
+    tag = AUTH_TAG,
     responses(
         (status = 200, description = "Token generated successfully", body = TokenResponse)
     )
@@ -74,7 +76,8 @@ async fn login_or_register(
     }
 
     // Strip the token prefix before hashing
-    let token_without_prefix = auth_request.token
+    let token_without_prefix = auth_request
+        .token
         .strip_prefix(&state.token_prefix)
         .unwrap_or(&auth_request.token);
 

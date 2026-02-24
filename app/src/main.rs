@@ -1,6 +1,7 @@
 mod routes;
 use routes::auth;
 use routes::dashboard;
+use routes::payment;
 use sea_orm::{Database, DatabaseConnection};
 use std::io::Error;
 use std::net::{Ipv4Addr, SocketAddr};
@@ -22,7 +23,8 @@ use hex;
 use std::env;
 // use migration::{Migrator, MigratorTrait};
 
-// const AUTH_TAG: &str = "auth";
+const AUTH_TAG: &str = "Authentication";
+const PAYMENT_TAG: &'static str = "Payments";
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -49,9 +51,19 @@ async fn main() -> Result<(), Error> {
     #[derive(OpenApi)]
     #[openapi(
         // modifiers(&SecurityAddon),
-        // tags(
-            // (name = AUTH_TAG, description = "Auth endpoints")
-        // )
+        info(
+            title = "CryptoWrap",
+            version = "0.1.3",
+            // description = "test",
+            // license = "https://codeberg.org/NakataModem/cryptowrap/raw/branch/main/LICENSE.md", // license struct
+            // terms_of_service = "/assets/tos.html", // TODO
+            // contact = , // contact struct
+            //extensions = ,
+        ),
+        tags(
+         (name = AUTH_TAG),
+         (name = PAYMENT_TAG),
+        ),
     )]
     struct ApiDoc;
 
@@ -75,6 +87,7 @@ async fn main() -> Result<(), Error> {
 
     let (api_router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
         .nest("/api/v1/auth", auth::router())
+        .nest("/api/v1/payments", payment::router())
         .layer(CookieManagerLayer::new())
         .with_state(state)
         .split_for_parts();
