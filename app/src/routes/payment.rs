@@ -1,7 +1,7 @@
 use crate::AppState;
 use crate::PAYMENT_TAG;
 use crate::routes::auth_helper::extract_api_key;
-use axum::{Json, extract::State, http::HeaderMap, http::StatusCode};
+use axum::{Json, extract::Query, extract::State, http::HeaderMap, http::StatusCode};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
@@ -12,7 +12,7 @@ pub struct InvoiceResponse {
     #[schema(value_type = String)]
     pub invoice_uuid: Uuid,
     pub wallet_address: String,
-    pub payment_amount: String,
+    pub amount_requested: String,
     pub currency: Currency,
 }
 
@@ -59,8 +59,58 @@ pub async fn create_invoice(
     Ok(Json(InvoiceResponse {
         invoice_uuid: mock_invoice,
         wallet_address: "...".to_string(),
-        payment_amount: "0.15".to_string(),
+        amount_requested: "0.15".to_string(),
         currency: invoice_request.currency,
+    }))
+}
+
+#[derive(Deserialize, ToSchema)]
+pub struct CheckInvoiceRequest {
+    #[schema(value_type = String)]
+    pub invoice_uuid: Uuid,
+}
+
+#[derive(Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum PaymentStatus {
+    Waiting,
+    Detected, //Mempool tx / 0-conf
+    Confirmed,
+    Expired,
+    // Spendable ?
+}
+
+#[derive(Serialize, ToSchema)]
+pub struct CheckInvoiceResponse {
+    #[schema(value_type = String)]
+    pub invoice_uuid: Uuid,
+    pub wallet_address: String,
+    pub amount_requested: String,
+    pub payment_status: PaymentStatus,
+}
+
+/// Check invoice
+///
+/// Returns invoice payment status.
+#[utoipa::path(
+    get,
+    path = "/check_invoice",
+    tag = PAYMENT_TAG,
+    responses(
+        (status = 200, description = "Invoice information", body = CheckInvoiceResponse),
+        (status = 404, description = "Invoice not found"),
+    )
+)]
+pub async fn check_invoice(
+    // checkout / bill
+    state: State<AppState>,
+    Query(invoice_request): Query<CheckInvoiceRequest>,
+) -> Result<Json<CheckInvoiceResponse>, StatusCode> {
+    Ok(Json(CheckInvoiceResponse {
+        invoice_uuid: Uuid::new_v4(),
+        wallet_address: "mock wallet address".to_string(),
+        amount_requested: "0.30".to_string(),
+        payment_status: PaymentStatus::Waiting,
     }))
 }
 
