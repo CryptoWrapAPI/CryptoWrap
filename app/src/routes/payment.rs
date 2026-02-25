@@ -8,7 +8,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
 #[derive(Serialize, ToSchema)]
-pub struct InvoiceResponse {
+pub struct CreateInvoiceResponse {
     #[schema(value_type = String)]
     pub invoice_uuid: Uuid,
     pub wallet_address: String,
@@ -24,7 +24,7 @@ pub enum Currency {
 }
 
 #[derive(Deserialize, ToSchema)]
-pub struct InvoiceRequest {
+pub struct CreateInvoiceRequest {
     pub amount: String, // 0.15
     pub currency: Currency, // XMR / xmr // cryptocurrency / e.g. coin ,.,.,.////
                         // pub network: Option<String>, // MONERO / Monero / monero
@@ -40,7 +40,7 @@ pub struct InvoiceRequest {
     tag = PAYMENT_TAG,
     security(("api_key" = [])),
     responses(
-        (status = 200, description = "Invoice created successfully", body = InvoiceResponse),
+        (status = 200, description = "Invoice created successfully", body = CreateInvoiceResponse),
         (status = 401, description = "Token is missing or invalid"),
     )
 )]
@@ -48,15 +48,15 @@ pub async fn create_invoice(
     // checkout / bill
     state: State<AppState>,
     headers: HeaderMap,
-    Json(invoice_request): Json<InvoiceRequest>,
-) -> Result<Json<InvoiceResponse>, StatusCode> {
+    Json(invoice_request): Json<CreateInvoiceRequest>,
+) -> Result<Json<CreateInvoiceResponse>, StatusCode> {
     let _token_id = extract_api_key(&state, &headers)
         .await
         .ok_or(StatusCode::UNAUTHORIZED)?;
 
     let mock_invoice = Uuid::new_v4();
 
-    Ok(Json(InvoiceResponse {
+    Ok(Json(CreateInvoiceResponse {
         invoice_uuid: mock_invoice,
         wallet_address: "...".to_string(),
         amount_requested: "0.15".to_string(),
@@ -77,7 +77,8 @@ pub enum PaymentStatus {
     Detected, //Mempool tx / 0-conf
     Confirmed,
     Expired,
-    // Spendable ?
+    // Failed ?
+    // Spendable (?)
 }
 
 #[derive(Serialize, ToSchema)]
@@ -86,7 +87,13 @@ pub struct CheckInvoiceResponse {
     pub invoice_uuid: Uuid,
     pub wallet_address: String,
     pub amount_requested: String,
-    pub payment_status: PaymentStatus,
+    pub amount_received: String,
+    pub payment_status: PaymentStatus, // payment status changes on detected if amount needed to fulfill request is received in mempool (or at least one in mempool), and it changed to confirmed when all of transactions required to fulfill request has at least 1 confirmation
+    pub confirmations: Option<u32>, // if multiple transactions received, this will show lowest confirmations count
+    // ^ user can check lowest confirmation to be able to release digital goods to only when it's completely safe
+    // pub recommended_confirmations: u32,
+    pub transactions: Vec<String>, // list of transaction hashes (in monero), tx id (btc), etc
+                                   // pub expiry_datetime: String, // 1 hour since last check
 }
 
 /// Check invoice
@@ -103,6 +110,7 @@ pub struct CheckInvoiceResponse {
 )]
 pub async fn check_invoice(
     // checkout / bill
+    // receipt
     state: State<AppState>,
     Query(invoice_request): Query<CheckInvoiceRequest>,
 ) -> Result<Json<CheckInvoiceResponse>, StatusCode> {
@@ -115,5 +123,5 @@ pub async fn check_invoice(
 }
 
 pub fn router() -> OpenApiRouter<AppState> {
-    OpenApiRouter::new().routes(routes!(create_invoice))
+    OpenApiRouter::new().routes(routes!(create_invoice, check_invoice))
 }
