@@ -67,6 +67,16 @@ async fn main() -> Result<(), Error> {
          (name = AUTH_TAG),
          (name = PAYMENT_TAG),
         ),
+        components(
+            schemas(
+                payment::CreateInvoiceResponse,
+                payment::Currency,
+                payment::CreateInvoiceRequest,
+                payment::CheckInvoiceRequest,
+                payment::PaymentStatus,
+                payment::CheckInvoiceResponse,
+            )
+        )
     )]
     struct ApiDoc;
 

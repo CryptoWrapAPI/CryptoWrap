@@ -81,7 +81,7 @@ pub enum PaymentStatus {
     // Spendable (?)
 }
 
-#[derive(Serialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct CheckInvoiceResponse {
     #[schema(value_type = String)]
     pub invoice_uuid: Uuid,
@@ -103,6 +103,9 @@ pub struct CheckInvoiceResponse {
     get,
     path = "/check_invoice",
     tag = PAYMENT_TAG,
+    params(
+        ("invoice_uuid" = String, Query, description = "UUID of the invoice to check")
+    ),
     responses(
         (status = 200, description = "Invoice information", body = CheckInvoiceResponse),
         (status = 404, description = "Invoice not found"),
@@ -118,7 +121,10 @@ pub async fn check_invoice(
         invoice_uuid: Uuid::new_v4(),
         wallet_address: "mock wallet address".to_string(),
         amount_requested: "0.30".to_string(),
+        amount_received: "3.321".to_string(),
         payment_status: PaymentStatus::Waiting,
+        confirmations: None,
+        transactions: vec![],
     }))
 }
 
