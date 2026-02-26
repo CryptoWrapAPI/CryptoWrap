@@ -56,6 +56,14 @@ pub async fn create_invoice(
 
     let mock_invoice = Uuid::new_v4();
 
+    // rate limiting
+    // no more than 1 invoice per second/minutes and no more than 1000 invoices per day (hard limit, can be unjusted in future)
+    // maybe add new table for stateless rrrate limiting
+    // (or don't apply rate limiting ? maybe at least for daily or hourly invoices limit, for example 1000 invoices per hour)
+    // returning error if it's violated
+    //
+    // ^ rate limit is applied to a single token
+
     Ok(Json(CreateInvoiceResponse {
         invoice_uuid: mock_invoice,
         wallet_address: "...".to_string(),
@@ -117,6 +125,10 @@ pub async fn check_invoice(
     state: State<AppState>,
     Query(invoice_request): Query<CheckInvoiceRequest>,
 ) -> Result<Json<CheckInvoiceResponse>, StatusCode> {
+    // here should be rate-limiting logic
+    // don't query monero-wallet-rpc if request is received less than 2 minutes ago (block time) or 1 minute (for mempool)
+    // return saved in database data, so it's just a db lookup (for spamming requests)
+
     Ok(Json(CheckInvoiceResponse {
         invoice_uuid: Uuid::new_v4(),
         wallet_address: "mock wallet address".to_string(),
@@ -131,3 +143,24 @@ pub async fn check_invoice(
 pub fn router() -> OpenApiRouter<AppState> {
     OpenApiRouter::new().routes(routes!(create_invoice, check_invoice))
 }
+
+// How would invoices table look like?
+// invoice_id (uuid default, not null)
+// currency (string, currency code: XMR, USDC, BTC)
+// network (string, MONERO, SOLANA, LIGHTNING / BITCOIN)
+// wallet_address (string, actual wallet address request to pay to is created, e.g. invoice payment address)
+// amount_requested (string, applied only once at creation/insert/ion)
+// amount_received (string, by default 0, will be updated on each check until payment is finalized)
+// payment_status (string, enum from payment status at payment.rs: waiting, detected, confirmed, expired)
+// confirmations (u32, updated from monero-wallet-rpc, electrum, etc, on each request)
+// transactions (list, I assume we can use postgres' jsonb)
+
+// How would MoneroWallet table look like?
+// id (primary-key-auto-incremental)
+// major index (account)
+// minor index (subaddress)
+// wallet address (actual)
+// created at (default now, timestamp, won't change)
+// last used at (default now, timestamp, will be updated if address is borrowed of freed, e.g. is_available or blockchain height changed)
+// blockchain_height (u32)
+// is_available (bool, for reuse)

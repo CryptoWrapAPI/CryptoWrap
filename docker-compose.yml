@@ -15,6 +15,10 @@ services:
     networks:
       - db_network  # Both services share this network
 
+
+  # add redis container for stateless rate-limiting
+
+
 volumes:
   postgres_data:
 

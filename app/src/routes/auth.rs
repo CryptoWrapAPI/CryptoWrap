@@ -101,6 +101,8 @@ async fn login_or_register(
                 ..Default::default()
             };
             new_token.insert(&state.conn).await.unwrap()
+            // add rate limiting: 10 tokens per hour max for 1 ip (registered, not generated or logged in)
+            // how to efficiently apply rate-limiting without load on db? redis!
         }
     };
 
