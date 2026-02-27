@@ -1,13 +1,22 @@
 use crate::AppState;
 use crate::PAYMENT_TAG;
+use crate::entity::invoices;
 use crate::routes::auth_helper::extract_api_key;
 use axum::{Json, extract::Query, extract::State, http::HeaderMap, http::StatusCode};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
 use serde::{Deserialize, Serialize};
+use strum_macros::Display;
 use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
 #[derive(Serialize, ToSchema)]
+#[schema(example = json!({
+    "invoice_uuid":"3f270a5a-50be-4ad7-9f01-fffc2c5144b3",
+    "wallet_address":"46QYvqx4Z8JKk26DVyNbFjMgFqXyrXgAb3W8kEHBiSN78XrcoPRHk4ATjoCJ9eia5MVQMxDdQ6nAaa2D9MgLgZV31V2bCRS",
+    "amount_requested":"1.5",
+    "currency":"XMR",
+}))]
 pub struct CreateInvoiceResponse {
     #[schema(value_type = String)]
     pub invoice_uuid: Uuid,
@@ -16,19 +25,33 @@ pub struct CreateInvoiceResponse {
     pub currency: Currency,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Display)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum Currency {
     XMR,
     // BTC , // add later
 }
 
+#[derive(Serialize, Deserialize, ToSchema, Display)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum Network {
+    Monero,
+    // Lightning , // add later
+}
+
 #[derive(Deserialize, ToSchema)]
+#[schema(example = json!({
+    "amount":"1.5",
+    "currency":"XMR",
+    "wallet_address":"46QYvqx4Z8JKk26DVyNbFjMgFqXyrXgAb3W8kEHBiSN78XrcoPRHk4ATjoCJ9eia5MVQMxDdQ6nAaa2D9MgLgZV31V2bCRS",
+}))]
 pub struct CreateInvoiceRequest {
     pub amount: String, // 0.15
+    // #[schema(value_type = String, example = "XMR")]
     pub currency: Currency, // XMR / xmr // cryptocurrency / e.g. coin ,.,.,.////
-                        // pub network: Option<String>, // MONERO / Monero / monero
-                        // ^ let's use lowercase only
+    // pub network: Option<String>, // MONERO / Monero / monero
+    // ^ let's use lowercase only
+    pub network: Option<Network>,
 }
 
 /// Create an invoice
@@ -54,7 +77,7 @@ pub async fn create_invoice(
         .await
         .ok_or(StatusCode::UNAUTHORIZED)?;
 
-    let mock_invoice = Uuid::new_v4();
+    // let mock_invoice = Uuid::new_v4(); // get invoice from created row
 
     // rate limiting
     // no more than 1 invoice per second/minutes and no more than 1000 invoices per day (hard limit, can be unjusted in future)
@@ -64,10 +87,40 @@ pub async fn create_invoice(
     //
     // ^ rate limit is applied to a single token
 
+    // convert option network enum to string
+    let network = if let Some(net) = invoice_request.network {
+        net.to_string()
+    } else {
+        // default values for not specified network
+        match invoice_request.currency {
+            Currency::XMR => Network::Monero.to_string(),
+        }
+    };
+
+    // f64 has 15-16 decimal places/prevision
+    let amount_requested: f64 = invoice_request
+        .amount
+        .parse()
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
+
+    let invoice = invoices::ActiveModel {
+        currency: Set(invoice_request.currency.to_string()),
+        network: Set(network),
+        amount_requested: Set(amount_requested.to_string()),
+        payment_status: Set(PaymentStatus::Waiting.to_string()),
+        wallet_address: Set("someaddr".to_string()),
+        ..Default::default()
+    };
+    let invoice = invoice.insert(&state.conn).await.unwrap();
+    let invoice_uuid = invoice.invoice_id;
+
+    let wallet_address = "...".to_string();
+    let amount_requested = "...".to_string();
+
     Ok(Json(CreateInvoiceResponse {
-        invoice_uuid: mock_invoice,
-        wallet_address: "...".to_string(),
-        amount_requested: "0.15".to_string(),
+        invoice_uuid,
+        wallet_address,
+        amount_requested,
         currency: invoice_request.currency,
     }))
 }
@@ -78,7 +131,7 @@ pub struct CheckInvoiceRequest {
     pub invoice_uuid: Uuid,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Display)]
 #[serde(rename_all = "lowercase")]
 pub enum PaymentStatus {
     Waiting,
@@ -90,6 +143,35 @@ pub enum PaymentStatus {
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
+#[schema(example = json!({
+    "invoice_uuid":"3f270a5a-50be-4ad7-9f01-fffc2c5144b3",
+    "wallet_address":"46QYvqx4Z8JKk26DVyNbFjMgFqXyrXgAb3W8kEHBiSN78XrcoPRHk4ATjoCJ9eia5MVQMxDdQ6nAaa2D9MgLgZV31V2bCRS",
+    "amount_requested":"1.5",
+    "amount_received":"0",
+    "payment_status":"waiting",
+    "confirmations":Option::<u32>::None, //serde_json::Value::Null
+    "transactions":[],    
+}))]
+
+//add multiple example for detected and confirmed:
+// #[response(
+//     examples(
+//         ("Success" = (value = json!({
+//             "invoice_uuid": "550e8400-e29b-41d4-a716-446655440000",
+//             "wallet_address": "44AFFq5...",
+//             "amount_requested": "0.15",
+//             "currency": "XMR"
+//         }))),
+//         ("Pending" = (value = json!({
+//             "invoice_uuid": "550e8400-e29b-41d4-a716-446655440000",
+//             "wallet_address": "44AFFq5...",
+//             "amount_requested": "0.15",
+//             "amount_received": "0.10",
+//             "currency": "XMR",
+//             "payment_status": "Waiting"
+//         })))
+//     )
+// )]
 pub struct CheckInvoiceResponse {
     #[schema(value_type = String)]
     pub invoice_uuid: Uuid,
@@ -97,6 +179,7 @@ pub struct CheckInvoiceResponse {
     pub amount_requested: String,
     pub amount_received: String,
     pub payment_status: PaymentStatus, // payment status changes on detected if amount needed to fulfill request is received in mempool (or at least one in mempool), and it changed to confirmed when all of transactions required to fulfill request has at least 1 confirmation
+    // #[schema(value_type = i32)]
     pub confirmations: Option<u32>, // if multiple transactions received, this will show lowest confirmations count
     // ^ user can check lowest confirmation to be able to release digital goods to only when it's completely safe
     // pub recommended_confirmations: u32,

@@ -2,4 +2,6 @@
 
 pub mod prelude;
 
+pub mod invoices;
+pub mod monero_wallet;
 pub mod tokens;

@@ -15,7 +15,7 @@ impl MigrationTrait for Migration {
                         uuid("invoice_id")
                             .primary_key()
                             .default(Expr::cust("gen_random_uuid()"))
-                            .not_null(),
+                            .unique_key(),       
                     )
                     .col(string("currency").string_len(10).not_null())
                     .col(string("network").string_len(20).not_null())
@@ -24,15 +24,14 @@ impl MigrationTrait for Migration {
                     .col(
                         string("amount_received")
                             .default(Expr::value("0"))
-                            .not_null(),
                     )
                     .col(string("payment_status").string_len(20).not_null())
-                    .col(integer("confirmations"))
+                    .col(integer("confirmations").null())
                     .col(
                         ColumnDef::new(Invoices::Transactions)
                             .custom(Alias::new("jsonb"))
                             .default(Expr::cust("'[]'::jsonb"))
-                            .not_null(),
+                            .null(),
                     )
                     .to_owned(),
             )

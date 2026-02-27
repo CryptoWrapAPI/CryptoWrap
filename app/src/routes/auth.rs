@@ -11,6 +11,9 @@ use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 #[derive(Serialize, ToSchema)]
+#[schema(example = json!({
+    "token":"cwrp_live_*",
+}))]
 pub struct TokenResponse {
     pub token: String,
     // pub token_type: String,
