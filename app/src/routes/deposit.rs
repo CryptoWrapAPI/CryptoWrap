@@ -10,43 +10,6 @@ use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
-#[derive(Serialize, ToSchema)]
-#[schema(example = json!({
-    "deposit_uuid":"3f270a5a-50be-4ad7-9f01-fffc2c5144b3",
-    "wallet_address":"46QYvqx4Z8JKk26DVyNbFjMgFqXyrXgAb3W8kEHBiSN78XrcoPRHk4ATjoCJ9eia5MVQMxDdQ6nAaa2D9MgLgZV31V2bCRS",
-    "currency":"XMR",
-}))]
-pub struct CreateDepositResponse {
-    #[schema(value_type = String)]
-    pub deposit_uuid: Uuid,
-    pub wallet_address: String,
-    pub currency: Currency,
-}
-
-#[derive(Serialize, Deserialize, ToSchema, Display)]
-#[serde(rename_all = "UPPERCASE")]
-pub enum Currency {
-    XMR,
-}
-
-#[derive(Serialize, Deserialize, ToSchema, Display)]
-#[serde(rename_all = "UPPERCASE")]
-pub enum Network {
-    Monero,
-}
-
-#[derive(Deserialize, ToSchema)]
-#[schema(example = json!({
-    "amount":"1.5",
-    "currency":"XMR",
-    "wallet_address":"46QYvqx4Z8JKk26DVyNbFjMgFqXyrXgAb3W8kEHBiSN78XrcoPRHk4ATjoCJ9eia5MVQMxDdQ6nAaa2D9MgLgZV31V2bCRS",
-}))]
-pub struct CreateDepositRequest {
-    pub amount: String,
-    pub currency: Currency,
-    pub network: Option<Network>,
-}
-
 /// Create a deposit address for selected coin and (optionally) network
 ///
 /// Returns assigned wallet address with UUID for internal tracking.
@@ -80,7 +43,7 @@ pub async fn create(
     let deposit = deposits::ActiveModel {
         currency: Set(deposit_request.currency.to_string()),
         network: Set(network),
-        payment_status: Set(PaymentStatus::Waiting.to_string()),
+        payment_status: Set(DepositStatus::Waiting.to_string()),
         wallet_address: Set("someaddr".to_string()),
         ..Default::default()
     };
@@ -95,6 +58,41 @@ pub async fn create(
         currency: deposit_request.currency,
     }))
 }
+
+/// Check deposit status
+///
+/// Returns deposit status.
+#[utoipa::path(
+    get,
+    path = "/check",
+    tag = PAYMENT_TAG,
+    params(
+        ("deposit_uuid" = String, Query, description = "UUID of the deposit to check")
+    ),
+    responses(
+        (status = 200, description = "Deposit request information", body = CheckDepositResponse),
+        (status = 404, description = "Deposit request not found"),
+    )
+)]
+pub async fn check(
+    state: State<AppState>,
+    Query(deposit_request): Query<CheckDepositRequest>,
+) -> Result<Json<CheckDepositResponse>, StatusCode> {
+    Ok(Json(CheckDepositResponse {
+        deposit_uuid: Uuid::new_v4(),
+        wallet_address: "mock wallet address".to_string(),
+        amount_received: "3.321".to_string(),
+        payment_status: DepositStatus::Waiting,
+        confirmations: None,
+        txid: None,
+    }))
+}
+
+pub fn router() -> OpenApiRouter<AppState> {
+    OpenApiRouter::new().routes(routes!(create, check))
+}
+
+// txid = transaction id (e.g. transaction identificator or hash from blockchain) /
 
 #[derive(Deserialize, ToSchema)]
 pub struct CheckDepositRequest {
@@ -125,44 +123,42 @@ pub struct CheckDepositResponse {
     #[schema(value_type = String)]
     pub deposit_uuid: Uuid,
     pub wallet_address: String,
-    pub amount_requested: String,
     pub amount_received: String,
-    pub payment_status: PaymentStatus,
+    pub payment_status: DepositStatus,
     pub confirmations: Option<u32>,
     pub txid: Option<String>,
 }
 
-/// Check deposit status
-///
-/// Returns deposit status.
-#[utoipa::path(
-    get,
-    path = "/check",
-    tag = PAYMENT_TAG,
-    params(
-        ("deposit_uuid" = String, Query, description = "UUID of the deposit to check")
-    ),
-    responses(
-        (status = 200, description = "Deposit request information", body = CheckDepositResponse),
-        (status = 404, description = "Deposit request not found"),
-    )
-)]
-pub async fn check(
-    state: State<AppState>,
-    Query(deposit_request): Query<CheckDepositRequest>,
-) -> Result<Json<CheckDepositResponse>, StatusCode> {
-    Ok(Json(CheckDepositResponse {
-        deposit_uuid: Uuid::new_v4(),
-        wallet_address: "mock wallet address".to_string(),
-        amount_received: "3.321".to_string(),
-        payment_status: PaymentStatus::Waiting,
-        confirmations: None,
-        txid: None,
-    }))
+#[derive(Serialize, ToSchema)]
+#[schema(example = json!({
+    "deposit_uuid":"3f270a5a-50be-4ad7-9f01-fffc2c5144b3",
+    "wallet_address":"46QYvqx4Z8JKk26DVyNbFjMgFqXyrXgAb3W8kEHBiSN78XrcoPRHk4ATjoCJ9eia5MVQMxDdQ6nAaa2D9MgLgZV31V2bCRS",
+    "currency":"XMR",
+}))]
+pub struct CreateDepositResponse {
+    #[schema(value_type = String)]
+    pub deposit_uuid: Uuid,
+    pub wallet_address: String,
+    pub currency: Currency,
 }
 
-pub fn router() -> OpenApiRouter<AppState> {
-    OpenApiRouter::new().routes(routes!(create, check))
+#[derive(Serialize, Deserialize, ToSchema, Display)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum Currency {
+    XMR,
 }
 
-// txid = transaction id (e.g. transaction identificator or hash from blockchain) /
+#[derive(Serialize, Deserialize, ToSchema, Display)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum Network {
+    Monero,
+}
+
+#[derive(Deserialize, ToSchema)]
+#[schema(example = json!({
+    "currency":"XMR",
+}))]
+pub struct CreateDepositRequest {
+    pub currency: Currency,
+    pub network: Option<Network>,
+}

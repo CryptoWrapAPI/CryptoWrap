@@ -22,6 +22,7 @@ use utoipa::{
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_swagger_ui::SwaggerUi;
 mod entity;
+mod wallet;
 
 use hex;
 use std::env;
@@ -70,12 +71,12 @@ async fn main() -> Result<(), Error> {
         ),
         components(
             schemas(
-                payment::CreateInvoiceResponse,
-                payment::Currency,
-                payment::CreateInvoiceRequest,
-                payment::CheckInvoiceRequest,
-                payment::PaymentStatus,
-                payment::CheckInvoiceResponse,
+                // payment::CreateInvoiceResponse,
+                // payment::Currency,
+                // payment::CreateInvoiceRequest,
+                // payment::CheckInvoiceRequest,
+                // payment::PaymentStatus,
+                // payment::CheckInvoiceResponse,
             )
         )
     )]
@@ -102,7 +103,9 @@ async fn main() -> Result<(), Error> {
     let (api_router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
         .nest("/api/v1/auth", auth::router())
         // .nest("/api/v1/payments", payment::router())
-        .nest("/api/v1/deposit", deposit::router())
+        .nest("/api/v1/deposit", deposit::router()) // router is named plural, database table is also plural, but the endpoint is singular
+        // ^ it implies on simplicity of deposits logic, just create and check. funds are spendable after confirmed.
+        // ... nevermind, router name is singlular as well / too
         .layer(CookieManagerLayer::new())
         .with_state(state)
         .split_for_parts();
