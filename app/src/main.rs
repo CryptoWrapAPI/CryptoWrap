@@ -40,6 +40,8 @@ async fn main() -> Result<(), Error> {
     let app_key = env::var("APP_KEY").expect("APP_KEY must be set");
     let blake3_hash_token_pepper =
         env::var("BLAKE3_HASH_TOKEN_PEPPER").expect("BLAKE3_HASH_TOKEN_PEPPER must be set");
+    let monero_wallet_rpc_address =
+        env::var("MONERO_WALLET_RPC_ADDRESS").expect("MONERO_WALLET_RPC_ADDRESS must be set");
 
     let conn = Database::connect(db_url)
         .await
@@ -51,6 +53,7 @@ async fn main() -> Result<(), Error> {
         token_prefix,
         blake3_hash_token_pepper,
         cookie_key: Key::from(&hex::decode(app_key).unwrap()),
+        monero_wallet: wallet::monero::MoneroWallet::new(&monero_wallet_rpc_address),
     };
 
     #[derive(OpenApi)]
@@ -132,4 +135,5 @@ struct AppState {
     token_prefix: String,
     blake3_hash_token_pepper: String,
     cookie_key: Key,
+    monero_wallet: wallet::monero::MoneroWallet,
 }
