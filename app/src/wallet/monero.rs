@@ -31,7 +31,7 @@ impl MoneroWallet {
         }
     }
 
-    #[instrument(skip(self, params), fields(method = %method))]
+    // #[instrument(skip(self, params), fields(method = %method))]
     async fn rpc_request<T: for<'de> Deserialize<'de>>(
         &self,
         method: &str,
@@ -44,7 +44,7 @@ impl MoneroWallet {
             "params": params
         });
 
-        debug!(request = %pretty_json(&request), "Monero RPC request");
+        // debug!(request = %pretty_json(&request), "Monero RPC request");
 
         let response = self
             .client
@@ -56,7 +56,7 @@ impl MoneroWallet {
 
         let rpc_response: Value = response.json().await?;
 
-        debug!(response = %pretty_json(&rpc_response), "Monero RPC response");
+        // debug!(response = %pretty_json(&rpc_response), "Monero RPC response");
 
         if let Some(error) = rpc_response.get("error") {
             return Err(MoneroError::Rpc(error.to_string()));
