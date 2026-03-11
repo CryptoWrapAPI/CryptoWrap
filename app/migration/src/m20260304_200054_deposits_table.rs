@@ -45,6 +45,7 @@ impl MigrationTrait for Migration {
                     // background finalizer will do the job for payments that were satisfied just by detected or a few confirmations
                     // (while to finalize funds must be unlocked, 20 confs for monero, maybe in other coins finalization will be faster)
                     .col(boolean("finalized").default(false))
+                    .col(string("notify_url").null())
                     .to_owned(),
             )
             .await

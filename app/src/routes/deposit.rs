@@ -5,6 +5,7 @@ use crate::routes::auth_helper::extract_user_row;
 use crate::wallet::monero_helper::{self, DepositCheckResult};
 use axum::{Json, extract::Query, extract::State, http::HeaderMap, http::StatusCode};
 use chrono::Utc;
+use reqwest::Client;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
@@ -90,6 +91,7 @@ pub async fn create(
         //graceful l
         // another layer of protection can be to implement grace period of re-use (for example: 1 hour of wait at least before using is_available address)
         //  --- moved min_blockchain_height to blockchain_height from monero_wallet using another sql query
+        notify_url: Set(deposit_request.notify_url.clone()),
         ..Default::default()
     };
     let deposit = deposit.insert(&state.conn).await.unwrap();
@@ -218,11 +220,14 @@ pub async fn check(
         is_finalized = true;
     };
 
-    let mut deposit_active_model: deposits::ActiveModel = deposit.into();
+    let payment_status_before_update = deposit.payment_status.clone();
+    let notify_url = deposit.notify_url.clone();
+
+    let mut deposit_active_model: deposits::ActiveModel = deposit.clone().into();
     deposit_active_model.amount_received = Set(amount_received.clone());
     deposit_active_model.confirmations = Set(result.confirmations);
     deposit_active_model.txid = Set(result.txid.clone());
-    deposit_active_model.payment_status = Set(result.payment_status);
+    deposit_active_model.payment_status = Set(result.payment_status.clone());
     deposit_active_model.updated_at = Set(Some(Utc::now().naive_local()));
     deposit_active_model.finalized = Set(should_finalize);
     deposit_active_model
@@ -230,7 +235,10 @@ pub async fn check(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    Ok(Json(CheckDepositResponse {
+    // check if deposit.payment_status is different from result.payment_status
+    // if true - notify shop using notify_url, sending same response as we send on request below
+
+    let deposit_checked = CheckDepositResponse {
         deposit_uuid,
         wallet_address,
         amount_received,
@@ -238,7 +246,48 @@ pub async fn check(
         confirmations: result.confirmations.map(|c| c as u32),
         txid: result.txid,
         is_finalized,
-    }))
+    };
+
+    if payment_status_before_update != result.payment_status {
+        if let Some(url) = notify_url {
+            if let Err(e) = notify_shop(&url, &deposit_checked).await {
+                tracing::warn!("Failed to notify shop: {}", e);
+            }
+        }
+    };
+
+    Ok(Json(deposit_checked))
+}
+
+async fn notify_shop(
+    notify_url: &str,
+    deposit_checked: &CheckDepositResponse,
+) -> Result<(), String> {
+    let client = Client::new();
+    let max_retries = 3;
+
+    for attempt in 1..=max_retries {
+        let response = client
+            .post(notify_url)
+            .timeout(tokio::time::Duration::from_secs(5))
+            .json(deposit_checked)
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        if response.status() == StatusCode::ACCEPTED {
+            return Ok(());
+        }
+
+        if attempt < max_retries {
+            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+        }
+    }
+
+    Err(format!(
+        "Failed to notify shop after {} attempts",
+        max_retries
+    ))
 }
 
 pub fn router() -> OpenApiRouter<AppState> {
@@ -338,6 +387,7 @@ pub enum Network {
 pub struct CreateDepositRequest {
     pub currency: Currency,
     pub network: Option<Network>,
+    pub notify_url: Option<String>,
 }
 
 // add redirect url for url to return back to shop
