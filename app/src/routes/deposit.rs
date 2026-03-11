@@ -97,10 +97,13 @@ pub async fn create(
     let deposit = deposit.insert(&state.conn).await.unwrap();
     let deposit_uuid = deposit.deposit_id;
 
+    let checkout_page = format!("{0}/checkout?uuid={deposit_uuid}", &state.current_url);
+
     Ok(Json(CreateDepositResponse {
         deposit_uuid,
         wallet_address,
         currency: deposit_request.currency,
+        checkout_page,
     }))
 }
 
@@ -263,7 +266,13 @@ async fn notify_shop(
     notify_url: &str,
     deposit_checked: &CheckDepositResponse,
 ) -> Result<(), String> {
-    let client = Client::new();
+    // let client = Client::new();
+    let client = Client::builder()
+        .danger_accept_invalid_certs(true)
+        .build()
+        .unwrap();
+    // .map_err(|e| e.to_string())?;
+
     let max_retries = 3;
 
     for attempt in 1..=max_retries {
@@ -274,6 +283,7 @@ async fn notify_shop(
             .send()
             .await
             .map_err(|e| e.to_string())?;
+        // potential issue: can convert POST to GET if redirected (for example, from http to https)
 
         if response.status() == StatusCode::ACCEPTED {
             return Ok(());
@@ -366,6 +376,8 @@ pub struct CreateDepositResponse {
     pub deposit_uuid: Uuid,
     pub wallet_address: String,
     pub currency: Currency,
+    pub checkout_page: String, // simple gateway page that show all the payment details to users by providing uuid (comes with it in query string)
+                               // can be used to send to user for the payment
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Display)]
@@ -391,3 +403,4 @@ pub struct CreateDepositRequest {
 }
 
 // add redirect url for url to return back to shop
+// add hmac signature for webhook verification using sk
