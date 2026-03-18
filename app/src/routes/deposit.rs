@@ -100,6 +100,12 @@ pub async fn create(
 
     let checkout_page = format!("{0}/checkout?uuid={deposit_uuid}", &state.current_url);
 
+    // ===== NOTIFICATION
+    state
+        .tg_notificator
+        .notify(&format!("NEW DEPOSIT REQUEST CREATED:\n{}", deposit_uuid));
+    // ===== NOTIFICATION
+
     Ok(Json(CreateDepositResponse {
         deposit_uuid,
         wallet_address,
@@ -262,6 +268,13 @@ pub async fn check(
     };
 
     if payment_status_before_update != result.payment_status {
+        // ===== NOTIFICATION
+        state.tg_notificator.notify(&format!(
+            "DEPOSIT STATUS UPDATED: {}\n{}",
+            result.payment_status, deposit_uuid
+        ));
+        // ===== NOTIFICATION
+
         if let Some(url) = notify_url {
             if let Err(e) = notify_shop(&url, &deposit_checked).await {
                 tracing::warn!("Failed to notify shop: {}", e);

@@ -1,0 +1,2 @@
+*/30 * * * * cd /cryptowrap && env/bin/python scripts/update_fiat_prices.py >> fiat_prices.log 2>&1
+

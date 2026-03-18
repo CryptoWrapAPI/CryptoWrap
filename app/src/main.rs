@@ -26,6 +26,8 @@ use utoipa_swagger_ui::SwaggerUi;
 mod entity;
 mod wallet;
 
+use tg_notify::Notifier;
+
 use hex;
 use std::env;
 // use migration::{Migrator, MigratorTrait};
@@ -52,6 +54,11 @@ async fn main() -> Result<(), Error> {
         .expect("Database connection failed");
     // Migrator::up(&conn, None).await.unwrap();
 
+    let tg_bot_token = env::var("TG_BOT_TOKEN").expect("TG_BOT_TOKEN must be set");
+    let tg_chat_id = env::var("TG_CHAT_ID").expect("TG_CHAT_ID must be set");
+
+    let tg_notificator = Notifier::new(tg_bot_token, tg_chat_id);
+
     let state = AppState {
         conn,
         token_prefix,
@@ -59,6 +66,7 @@ async fn main() -> Result<(), Error> {
         cookie_key: Key::from(&hex::decode(app_key).unwrap()),
         monero_wallet: wallet::monero::MoneroWallet::new(&monero_wallet_rpc_address),
         current_url,
+        tg_notificator,
     };
 
     #[derive(OpenApi)]
@@ -144,4 +152,7 @@ struct AppState {
     cookie_key: Key,
     monero_wallet: wallet::monero::MoneroWallet,
     current_url: String,
+    tg_notificator: Notifier, // add easy switch to enable/disable notification
 }
+
+// add some sort of panic/error handler (e.g. custom) to send notification about it (e.g. alert system in telegram bot)

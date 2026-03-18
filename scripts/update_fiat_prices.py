@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 import requests
 import dotenv
 
-dotenv.load_dotenv("/home/nmodem/Desktop/project/cryptowrap.cv/.env")
+dotenv.load_dotenv(".env")
 
 COINGECKO_URL = "https://api.coingecko.com/api/v3/simple/price"
 
