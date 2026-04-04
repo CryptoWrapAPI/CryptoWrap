@@ -110,6 +110,8 @@ pub async fn get_free_monero_subaddress_with_major_index(
         // 2. If found, update its status to not available and return the address
         let mut active_model: MoneroWalletActiveModel = available_address_model.clone().into();
         active_model.is_available = Set(false);
+        active_model.blockchain_height = Set(height); // critical! ensure update height on reused addresses, so previous transfer won't be detected
+        // because min_blockchain_height is not included in the deposits table anymore
         active_model.update(conn).await?; // No need to set last_used_at manually if default is handled by DB
         // Ok((available_address_model.wallet_address, height))
         Ok(available_address_model.wallet_address)

@@ -37,6 +37,7 @@ pub async fn create(
         .await
         .ok_or((StatusCode::UNAUTHORIZED, "Unauthorized".to_string()))?;
 
+    // check if network is specifiied, if not - fallback to default network
     let network = if let Some(net) = deposit_request.network {
         net.to_string()
     } else {
@@ -48,6 +49,8 @@ pub async fn create(
     // before using next code, first check for what coin is selected/specified, because next code handles only monero xmr
     // we have only one option in createdepositrequest so it's fine for now
 
+    // check what coin is selected
+    // if deposit_request.currency == "XMR" {
     // get monero wallet address for this payment
     // first check if user has monero wallet initialized (e.g. has major wallet index in users db)
     let major_wallet_index = monero_helper::ensure_monero_major_wallet_index_for_user(
@@ -81,6 +84,8 @@ pub async fn create(
 
     // let wallet_address = free_subaddress.0; // new subaddress under this major index
     let wallet_address = free_subaddress;
+    //}// else if deposit_request.currency == "LTC" { // process litecoin deposit, create wallet address
+    //}
 
     let deposit = deposits::ActiveModel {
         currency: Set(deposit_request.currency.to_string()),
