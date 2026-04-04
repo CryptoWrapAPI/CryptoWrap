@@ -36,11 +36,5 @@ utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
 uuid = { version = "1.21.0", features = ["v4", "serde"] }
 
 [dependencies.sea-orm]
-features = [
-    "debug-print",
-    "runtime-tokio-native-tls",
-    "sqlx-postgres",
-    "macros",
-    "rust_decimal"
-]
+features = ["debug-print", "runtime-tokio-native-tls", "sqlx-postgres", "macros", "rust_decimal", "postgres-vector"]
 version = "~2.0.0-rc.32" # sea-orm version

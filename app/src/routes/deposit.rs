@@ -174,7 +174,7 @@ pub async fn check(
             amount_received: deposit.amount_received.clone(),
             payment_status: DepositStatus::from_str(&deposit.payment_status),
             confirmations: deposit.confirmations.map(|c| c as u32),
-            txid: deposit.txid,
+            txids: deposit.txids,
             is_finalized: deposit.finalized,
 
             // seialization will be skipped if none
@@ -198,7 +198,7 @@ pub async fn check(
     let min_height = address_entry.blockchain_height - 1;
 
     let result: DepositCheckResult =
-        monero_helper::check_for_first_inbound_transfer_confirmed_or_mempool_with_min_height(
+        monero_helper::check_for_inbound_transfers_confirmed_or_mempool_with_min_height(
             &state.monero_wallet,
             address_entry.major_index,
             address_entry.minor_index,
@@ -226,8 +226,19 @@ pub async fn check(
     let payment_status = DepositStatus::from_str(&result.payment_status);
 
     let amount_received = result.amount_received.clone();
-    let should_finalize = result.confirmations.map(|c| c >= 10).unwrap_or(false);
 
+    let should_finalize: bool;
+
+    // finalization decision. should or should not finalize, decided by coin type
+    if deposit.currency == "XMR" {
+        should_finalize = result.confirmations.map(|c| c >= 10).unwrap_or(false);
+    } else {
+        // default value
+        should_finalize = false
+    }
+    // add handle `else if` for litecoin
+
+    // if should_finalize is true -> is_finalized changes to true (??? profit)
     let is_finalized: bool;
     if should_finalize == false {
         is_finalized = false;
@@ -241,7 +252,7 @@ pub async fn check(
     let mut deposit_active_model: deposits::ActiveModel = deposit.clone().into();
     deposit_active_model.amount_received = Set(amount_received.clone());
     deposit_active_model.confirmations = Set(result.confirmations);
-    deposit_active_model.txid = Set(result.txid.clone());
+    deposit_active_model.txids = Set(result.txids.clone());
     deposit_active_model.payment_status = Set(result.payment_status.clone());
     deposit_active_model.updated_at = Set(Some(Utc::now().naive_local()));
     deposit_active_model.finalized = Set(should_finalize);
@@ -266,7 +277,7 @@ pub async fn check(
         amount_received: amount_received.clone(),
         payment_status,
         confirmations: result.confirmations.map(|c| c as u32),
-        txid: result.txid,
+        txids: result.txids,
         is_finalized,
         fiat_amount: fiat_conversion.as_ref().map(|f| f.amount.clone()),
         fiat_currency: fiat_conversion.map(|f| f.currency),
@@ -380,7 +391,8 @@ impl DepositStatus {
     "amount_received":"0",
     "payment_status":"waiting",
     "confirmations":Option::<u32>::None,
-    "txid":Option::<String>::None,
+    // "txids":Option::<String>::None,
+    "txids":"[]", // just for example matter
     "is_finalized":false,
 }))]
 
@@ -391,7 +403,7 @@ pub struct CheckDepositResponse {
     pub amount_received: String,
     pub payment_status: DepositStatus,
     pub confirmations: Option<u32>,
-    pub txid: Option<String>,
+    pub txids: Vec<String>,
     pub is_finalized: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fiat_amount: Option<String>,

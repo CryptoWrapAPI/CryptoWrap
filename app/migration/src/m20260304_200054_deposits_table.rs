@@ -24,7 +24,13 @@ impl MigrationTrait for Migration {
                     .col(string("payment_status").string_len(20).not_null())
                     // .col(integer("min_blockchain_height").null()) // will be suitable for monero, litecoin, etc (address re-use, to scan for new transfers from current height)
                     .col(integer("confirmations").null())
-                    .col(string("txid").null()) // transaction hash
+                    // .col(vector("txids").null()) // transactions hashes
+                    // .col(ColumnDef::new(Alias::new("txids")).vector(None).null())
+                    // .col(array("txids", ColumnType::Text).null())
+                    .col(
+                        array("txids", ColumnType::String(StringLen::N(64)))
+                            .default(Expr::cust("'{}'")),
+                    )
                     // theoretically major/minor indexes or uuid of row in (coin) table wallet can be added
                     // (monero accounts / subaddresses)
                     //
@@ -70,6 +76,6 @@ enum Deposits {
     Confirmations,
     CreatedAt,
     UpdatedAt,
-    Txid,
+    Txids,
     Finalized,
 }

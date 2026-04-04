@@ -13,7 +13,7 @@ pub struct Model {
     pub amount_received: String,
     pub payment_status: String,
     pub confirmations: Option<i32>,
-    pub txid: Option<String>,
+    pub txids: Vec<String>,
     pub created_at: DateTime,
     pub updated_at: Option<DateTime>,
     pub finalized: bool,

@@ -51,7 +51,7 @@ impl From<sea_orm::DbErr> for MoneroHelperError {
 pub struct DepositCheckResult {
     pub amount_received: String,
     pub confirmations: Option<i32>,
-    pub txid: Option<String>,
+    pub txids: Vec<String>,
     pub payment_status: String,
 }
 
@@ -145,7 +145,7 @@ pub async fn get_free_monero_subaddress_with_major_index(
     }
 }
 
-pub async fn check_for_first_inbound_transfer_confirmed_or_mempool_with_min_height(
+pub async fn check_for_inbound_transfers_confirmed_or_mempool_with_min_height(
     monero_wallet_client: &MoneroWallet,
     account_index: i32,
     subaddress_index: i32,
@@ -165,12 +165,16 @@ pub async fn check_for_first_inbound_transfer_confirmed_or_mempool_with_min_heig
     )
     .await?;
 
+    // TODO: calculate amound from all transactions, return multiple (all) tx ids (vec)
+    // is *any* amount is received - change status to detected
+    // if *all* of the amount is confirmed - change status to confirmed
+
     let pool_transfers = transfers_response.pool.unwrap_or_default();
     if let Some(pool_transfer) = pool_transfers.iter().find(|_| true) {
         return Ok(DepositCheckResult {
             amount_received: piconero_to_xmr_string(pool_transfer.amount),
             confirmations: None,
-            txid: None,
+            txids: vec![],
             payment_status: "detected".to_string(),
         });
     }
@@ -181,10 +185,13 @@ pub async fn check_for_first_inbound_transfer_confirmed_or_mempool_with_min_heig
 
         let status = "confirmed";
 
+        let mut txids = Vec::new();
+        txids.push(inbound_transfer.txid.clone());
+
         return Ok(DepositCheckResult {
             amount_received: piconero_to_xmr_string(inbound_transfer.amount),
             confirmations: confirmations,
-            txid: Some(inbound_transfer.txid.clone()),
+            txids,
             payment_status: status.to_string(),
         });
     }
@@ -192,7 +199,7 @@ pub async fn check_for_first_inbound_transfer_confirmed_or_mempool_with_min_heig
     Ok(DepositCheckResult {
         amount_received: "0".to_string(),
         confirmations: None,
-        txid: None,
+        txids: vec![],
         payment_status: "waiting".to_string(),
     })
 }
