@@ -18,6 +18,8 @@ You can use your own customised HTML template using same API endpoints.
 - Accept, store and send coins via isolated `virtual` accounts. <br>
 For systems with multiple users, where funds must be safely separated and managed.
 
+- **Deposit tracking with multi-transaction support** <br>
+A `deposit` is a mechanism for accepting crypto payments in a single logical transaction with a dynamic amount. The system detects inbound funds and tracks progress until the deposit is finalized. It supports both single and multiple partial transactions — for example, during Monero's 10-confirmation lock user can send multiple transactions, all of which are detected and aggregated. Other currencies may finalize deposits earlier (fewer confirmations), but the system handles this seamlessly since detection is confirmation-agnostic. The deposit status transitions from `waiting` → `detected` (mempool/pool) → `confirmed` (all funds confirmed), returning all relevant txids and the total received amount. With multiple txs, the returned confirmation count is the minimum across all transactions.
 
 ## Technology Stack
 

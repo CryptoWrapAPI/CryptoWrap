@@ -165,41 +165,56 @@ pub async fn check_for_inbound_transfers_confirmed_or_mempool_with_min_height(
     )
     .await?;
 
-    // TODO: calculate amound from all transactions, return multiple (all) tx ids (vec)
-    // is *any* amount is received - change status to detected
-    // if *all* of the amount is confirmed - change status to confirmed
-
     let pool_transfers = transfers_response.pool.unwrap_or_default();
-    if let Some(pool_transfer) = pool_transfers.iter().find(|_| true) {
+    let inbound_transfers = transfers_response.inbound.unwrap_or_default();
+
+    let has_pool = !pool_transfers.is_empty();
+    let has_inbound = !inbound_transfers.is_empty();
+
+    // If no transfers at all, return waiting status
+    if !has_pool && !has_inbound {
         return Ok(DepositCheckResult {
-            amount_received: piconero_to_xmr_string(pool_transfer.amount),
+            amount_received: "0".to_string(),
             confirmations: None,
             txids: vec![],
-            payment_status: "detected".to_string(),
+            payment_status: "waiting".to_string(),
         });
     }
 
-    let inbound_transfers = transfers_response.inbound.unwrap_or_default();
-    if let Some(inbound_transfer) = inbound_transfers.iter().find(|_| true) {
-        let confirmations = inbound_transfer.confirmations;
+    // Calculate total amount from all transfers
+    let pool_total: u64 = pool_transfers.iter().map(|t| t.amount).sum();
+    let inbound_total: u64 = inbound_transfers.iter().map(|t| t.amount).sum();
+    let total_amount = pool_total + inbound_total;
 
-        let status = "confirmed";
+    // Collect all txids (only from confirmed inbound transfers, pool txs have no txids yet)
+    let txids: Vec<String> = inbound_transfers
+        .iter()
+        .map(|t| t.txid.clone())
+        .collect();
 
-        let mut txids = Vec::new();
-        txids.push(inbound_transfer.txid.clone());
-
-        return Ok(DepositCheckResult {
-            amount_received: piconero_to_xmr_string(inbound_transfer.amount),
-            confirmations: confirmations,
+    // Determine status based on transfer states
+    if has_pool {
+        // Pool transfers exist - payment is detected but not fully confirmed
+        Ok(DepositCheckResult {
+            amount_received: piconero_to_xmr_string(total_amount),
+            confirmations: None,
             txids,
-            payment_status: status.to_string(),
-        });
-    }
+            payment_status: "detected".to_string(),
+        })
+    } else {
+        // Only confirmed inbound transfers
+        // Use minimum confirmations from all transfers for the confirmations field
+        let min_confirmations = inbound_transfers
+            .iter()
+            .map(|t| t.confirmations.unwrap_or(0))
+            .min()
+            .unwrap_or(0);
 
-    Ok(DepositCheckResult {
-        amount_received: "0".to_string(),
-        confirmations: None,
-        txids: vec![],
-        payment_status: "waiting".to_string(),
-    })
+        Ok(DepositCheckResult {
+            amount_received: piconero_to_xmr_string(total_amount),
+            confirmations: Some(min_confirmations as i32),
+            txids,
+            payment_status: "confirmed".to_string(),
+        })
+    }
 }
