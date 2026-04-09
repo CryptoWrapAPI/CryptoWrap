@@ -144,11 +144,6 @@ pub async fn check(
     // get actual wallet address from this row
     // check wallet address on transfers using monero::get_transfers() specfying monero_wallet, address, and min. blockchain height (starting point)
     // blockchain height is stored in the deposit entry row we got earlier ^
-    //
-    //
-    // NOTICE:
-    // current implementation detects only last transaction, both in pool (mempool) and confirmed received (in/inbound)
-    //
 
     let deposit_uuid = deposit_request.deposit_uuid;
 
