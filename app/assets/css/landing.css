@@ -26,6 +26,7 @@ body {
     background-position: 0 0, 0 0, 0 0, 0 0;
     color: var(--text-main);
     line-height: 1.6;
+    background-attachment: fixed;
 }
 
 header {
@@ -96,6 +97,56 @@ main {
     margin: 0 auto 2.5rem;
 }
 
+.supported-coins {
+    text-align: center;
+    margin-bottom: 6rem;
+}
+
+.supported-coins h2 {
+    font-size: 2rem;
+    margin-bottom: 2.5rem;
+    color: var(--primary);
+}
+
+.coin-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    justify-items: center;
+    gap: 2rem;
+    max-width: 700px; /* Adjust as needed to fit 3 items comfortably */
+    margin: 0 auto;
+}
+
+.coin-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 1.5rem 2rem;
+    border-radius: 16px;
+    min-width: 140px;
+    transition: border-color 0.2s;
+}
+
+.coin-item:hover {
+    border-color: var(--secondary);
+}
+
+.coin-item img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.coin-item span {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
 .features {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -153,7 +204,6 @@ main {
 footer {
     text-align: center;
     padding: 4rem 2rem;
-    border-top: 1px solid var(--border-color);
     color: var(--text-muted);
     font-size: 0.9rem;
 }
