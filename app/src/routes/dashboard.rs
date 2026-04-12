@@ -18,9 +18,18 @@ async fn welcome() -> WelcomeTemplate {
     WelcomeTemplate {}
 }
 
+#[derive(Template, WebTemplate)]
+#[template(path = "landing.html")]
+struct LandingTemplate {}
+
+async fn landing() -> LandingTemplate {
+    LandingTemplate {}
+}
+
 pub fn router() -> Router {
     Router::new()
-        .route("/", get(welcome))
+        .route("/", get(landing))
+        .route("/auth", get(welcome))
         .route("/dashboard", get(dashboard))
 }
 

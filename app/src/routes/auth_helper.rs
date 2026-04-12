@@ -2,7 +2,7 @@ use crate::AppState;
 use crate::entity::tokens;
 use axum::http::HeaderMap;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
-use uuid::Uuid;
+// use uuid::Uuid;
 
 /// Extract and validate API key from headers, return token ID if valid
 // pub async fn extract_api_key(state: &AppState, headers: &HeaderMap) -> Option<Uuid> {
