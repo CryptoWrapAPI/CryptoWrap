@@ -5,7 +5,7 @@ Providing a unified interface for both inbound and outbound payments. The projec
 
 ### Coins
 - Monero 
-- Litecoin (in progress...)
+- Litecoin
 
 #### Features
 - HTML page for accepting crypto payments in 3 different modes:
