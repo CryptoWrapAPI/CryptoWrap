@@ -1,27 +1,28 @@
-use crate::{COOKIE_NAME, KEY};
+// use crate::{COOKIE_NAME, KEY};
 use askama::Template;
 use askama_web::WebTemplate;
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::{Router, routing::get};
-use tower_cookies::Cookies;
+// use tower_cookies::Cookies;
 
 #[derive(Template, WebTemplate)]
 #[template(path = "dashboard.html")]
 struct DashboardTemplate {}
 
-async fn dashboard(cookies: Cookies) -> Response {
-    let key = KEY.get().unwrap(); // can also store key in appstate
-    let private_cookies = cookies.private(key);
+// async fn dashboard(cookies: Cookies) -> Response {
+async fn dashboard() -> Response {
+    // let key = KEY.get().unwrap(); // can also store key in appstate
+    // let private_cookies = cookies.private(key);
 
-    let cookie_user_id = private_cookies
-        .get(COOKIE_NAME)
-        .and_then(|c| c.value().parse().ok())
-        .unwrap_or(0);
+    // let cookie_user_id = private_cookies
+    //     .get(COOKIE_NAME)
+    //     .and_then(|c| c.value().parse().ok())
+    //     .unwrap_or(0);
 
-    if cookie_user_id == 0 {
-        // required auth cookie doesn't exist, redirect user to /auth
-        return Redirect::to("/auth").into_response();
-    }
+    // if cookie_user_id == 0 {
+    //     // required auth cookie doesn't exist, redirect user to /auth
+    //     return Redirect::to("/auth").into_response();
+    // }
 
     // query user_id in database to identify user
     // clear cookie if user entry doesn't exist

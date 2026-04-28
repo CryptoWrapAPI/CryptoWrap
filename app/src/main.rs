@@ -10,7 +10,7 @@ use std::io::Error;
 use std::net::{Ipv4Addr, SocketAddr};
 use std::sync::OnceLock;
 use tokio::net::TcpListener;
-use tower_cookies::{Cookie, CookieManagerLayer, Cookies, Key};
+// use tower_cookies::{Cookie, CookieManagerLayer, Cookies, Key};
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 // use utoipa::{
@@ -38,8 +38,8 @@ use hex::FromHex;
 const AUTH_TAG: &str = "Authentication";
 const PAYMENT_TAG: &'static str = "Payments";
 
-const COOKIE_NAME: &str = "auth_cookie";
-static KEY: OnceLock<Key> = OnceLock::new(); // use appstate cookie key instead (?)
+// const COOKIE_NAME: &str = "auth_cookie";
+// static KEY: OnceLock<Key> = OnceLock::new();
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -71,14 +71,14 @@ async fn main() -> Result<(), Error> {
 
     // let cookie_key: &[u8] = &[0; 64]; // replace with real CSRNG key
     // let cookie_key: &[u8] = &Vec::from_hex(hex_string).expect("Invlalid hex string.");
-    let cookie_key: &[u8] = &Vec::from_hex(&app_key).expect("Invlalid hex string.");
-    KEY.set(Key::from(cookie_key)).ok();
+    // let cookie_key: &[u8] = &Vec::from_hex(&app_key).expect("Invlalid hex string.");
+    // KEY.set(Key::from(cookie_key)).ok(); // use external key instead of appstate because state layer is not defined for this router
 
     let state = AppState {
         conn,
         token_prefix,
         blake3_hash_token_pepper,
-        cookie_key: Key::from(&hex::decode(app_key).unwrap()),
+        // cookie_key: Key::from(&hex::decode(app_key).unwrap()),
         monero_wallet: wallet::monero::MoneroWallet::new(&monero_wallet_rpc_address),
         litecoin_wallet: wallet::litecoin::LitecoinWallet::new(&ltc_api_url, &ltc_mpk),
         current_url,
@@ -138,14 +138,14 @@ async fn main() -> Result<(), Error> {
         .nest("/api/v1/deposit", deposit::router()) // router is named plural, database table is also plural, but the endpoint is singular
         // ^ it implies on simplicity of deposits logic, just create and check. funds are spendable after confirmed.
         // ... nevermind, router name is singlular as well / too
-        .layer(CookieManagerLayer::new())
+        // .layer(CookieManagerLayer::new())
         .with_state(state)
         .split_for_parts();
 
     let static_files = ServeDir::new("./assets");
 
     let router = dashboard::router()
-        .layer(CookieManagerLayer::new()) // apply cookie only for dashbourd router (endpoints: /dashboard and /auth)
+        // .layer(CookieManagerLayer::new()) // apply cookie only for dashbourd router (endpoints: /dashboard and /auth)
         .merge(checkout::router())
         .merge(qr::router())
         .merge(api_router)
@@ -166,7 +166,7 @@ struct AppState {
     conn: DatabaseConnection,
     token_prefix: String,
     blake3_hash_token_pepper: String,
-    cookie_key: Key,
+    // cookie_key: Key,
     monero_wallet: wallet::monero::MoneroWallet,
     litecoin_wallet: wallet::litecoin::LitecoinWallet,
     current_url: String,

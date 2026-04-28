@@ -27,7 +27,7 @@ tg_notify = "1.1.3"
 thiserror = "2.0.18"
 tokio = { version = "1.49.0", features = ["full"] }
 tower = "0.5.3"
-tower-cookies = { version = "0.11.0", features = ["private"] }
+# tower-cookies = { version = "0.11.0", features = ["private"] }
 tower-http = { version = "0.6.8", features = ["trace", "fs"] }
 tracing = "0.1.44"
 tracing-subscriber = "0.3.22"
