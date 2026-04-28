@@ -33,11 +33,13 @@ use hex;
 use std::env;
 // use migration::{Migrator, MigratorTrait};
 
+use hex::FromHex;
+
 const AUTH_TAG: &str = "Authentication";
 const PAYMENT_TAG: &'static str = "Payments";
 
 const COOKIE_NAME: &str = "auth_cookie";
-static KEY: OnceLock<Key> = OnceLock::new();
+static KEY: OnceLock<Key> = OnceLock::new(); // use appstate cookie key instead (?)
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -65,7 +67,11 @@ async fn main() -> Result<(), Error> {
 
     let tg_notificator = Notifier::new(tg_bot_token, tg_chat_id);
 
-    let cookie_key: &[u8] = &[0; 64]; // replace with real CSRNG key
+    // let hex_string = env::var("COOKIE_KEY").expect("COOKIE_KEY must be set");
+
+    // let cookie_key: &[u8] = &[0; 64]; // replace with real CSRNG key
+    // let cookie_key: &[u8] = &Vec::from_hex(hex_string).expect("Invlalid hex string.");
+    let cookie_key: &[u8] = &Vec::from_hex(&app_key).expect("Invlalid hex string.");
     KEY.set(Key::from(cookie_key)).ok();
 
     let state = AppState {

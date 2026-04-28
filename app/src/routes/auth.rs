@@ -2,6 +2,7 @@ use crate::AUTH_TAG;
 use crate::AppState;
 use crate::entity::tokens;
 use axum::{Json, extract::State, http::StatusCode, routing::post};
+use axum_extra::extract::PrivateCookieJar;
 use base64::Engine;
 use openssl::rand::rand_bytes;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
@@ -63,7 +64,6 @@ pub async fn generate_token(state: State<AppState>) -> Json<TokenResponse> {
 // )]
 async fn login_or_register(
     state: State<AppState>,
-    cookies: Cookies,
     Json(auth_request): Json<AuthRequest>,
 ) -> StatusCode {
     if auth_request.token.is_empty() {
@@ -108,10 +108,6 @@ async fn login_or_register(
             // how to efficiently apply rate-limiting without load on db? redis!
         }
     };
-
-    cookies
-        .private(&state.cookie_key)
-        .add(Cookie::new("user_id", token_model.id.to_string()));
 
     StatusCode::OK
 }

@@ -7,6 +7,7 @@ edition = "2024"
 askama = "0.15.4"
 askama_web = { version = "0.15.1", features = ["axum-0.8"] }
 axum = "0.8.8"
+axum-extra = { version = "0.12.6", features = ["cookie", "cookie-private"] }
 base64 = "0.22.1"
 blake3 = "1.8.3"
 chrono = "0.4"
