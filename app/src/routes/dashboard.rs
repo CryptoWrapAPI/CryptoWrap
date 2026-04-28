@@ -4,13 +4,16 @@ use askama_web::WebTemplate;
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::{Router, routing::get};
 // use tower_cookies::Cookies;
+use crate::AppState;
+use axum::extract::State;
 
 #[derive(Template, WebTemplate)]
 #[template(path = "dashboard.html")]
 struct DashboardTemplate {}
 
 // async fn dashboard(cookies: Cookies) -> Response {
-async fn dashboard() -> Response {
+async fn dashboard(state: State<AppState>) -> Response {
+    // async fn dashboard() -> Response {
     // let key = KEY.get().unwrap(); // can also store key in appstate
     // let private_cookies = cookies.private(key);
 
@@ -46,11 +49,12 @@ async fn landing() -> LandingTemplate {
     LandingTemplate {}
 }
 
-pub fn router() -> Router {
+pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/", get(landing))
         .route("/auth", get(welcome))
         .route("/dashboard", get(dashboard))
+        .with_state(state)
 }
 
 // check cookie with encrypted bearer token here
