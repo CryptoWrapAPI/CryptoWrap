@@ -18,12 +18,24 @@ function initializeDashboard() {
     document.querySelector('.btn-copy-api').addEventListener('click', copyApiKey);
 }
 
-function handleLogout() {
+async function handleLogout() {
     if (confirm('Are you sure you want to logout?')) {
-        // In a real application, this would hit the logout API endpoint
-        console.log('Logout triggered - would call: DELETE /api/auth/logout');
-        // Redirect to login page
-        window.location.href = '/';
+        try {
+            const response = await fetch('/logout', {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                // Logout successful, redirect to login page
+                window.location.href = '/auth';
+            } else {
+                throw new Error('Logout failed');
+            }
+        } catch (error) {
+            console.error('Error during logout:', error);
+            // Even if the API call fails, redirect to login
+            window.location.href = '/auth';
+        }
     }
 }
 

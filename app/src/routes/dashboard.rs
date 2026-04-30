@@ -2,8 +2,12 @@
 use askama::Template;
 use askama_web::WebTemplate;
 use axum::response::{IntoResponse, Redirect, Response};
-use axum::{Router, routing::get};
-use axum_extra::extract::PrivateCookieJar;
+use axum::{
+    Router,
+    routing::{get, post},
+};
+use axum_extra::extract::cookie::{Cookie, PrivateCookieJar};
+use hyper::StatusCode;
 use uuid::Uuid;
 // use tower_cookies::Cookies;
 use crate::AppState;
@@ -16,7 +20,7 @@ use sea_orm::{EntityTrait, QueryFilter};
 struct DashboardTemplate {}
 
 // async fn dashboard(cookies: Cookies) -> Response {
-async fn dashboard(state: State<AppState>, jar: PrivateCookieJar) -> Response {
+async fn dashboard(state: State<AppState>, jar: PrivateCookieJar) -> (PrivateCookieJar, Response) {
     // async fn dashboard() -> Response {
     // let key = KEY.get().unwrap(); // can also store key in appstate
     // let private_cookies = cookies.private(key);
@@ -31,6 +35,8 @@ async fn dashboard(state: State<AppState>, jar: PrivateCookieJar) -> Response {
     // return Redirect::to("/auth").into_response();
     // }
 
+    let user_token_entry;
+
     if let Some(user_id) = jar.get("auth") {
         // verify user id existance in db
         // println!("user_id: {}", user_id.value());
@@ -42,39 +48,60 @@ async fn dashboard(state: State<AppState>, jar: PrivateCookieJar) -> Response {
                     Ok(Some(token)) => {
                         // user identified
                         println!("Found token: {:?}", token);
+                        user_token_entry = token;
                     }
                     Ok(None) => {
                         println!("Token not found: {}", token_id);
-                        // ideally clear cookie
+                        // clear cookie
+                        let jar = jar.remove(Cookie::from("auth"));
+                        return (jar, Redirect::to("/auth").into_response());
                     }
                     Err(e) => {
+                        // response with 500 error?
                         eprintln!("Database error: {}", e);
-                        return Redirect::to("/auth").into_response();
+                        return (
+                            jar,
+                            (
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                format!("Database error: {}", e),
+                            )
+                                .into_response(),
+                        );
                     }
                 }
             }
             Err(_) => {
                 // token uuid is invalid
-                // ideally clear cookie
-                return Redirect::to("/auth").into_response();
+                // clear cookie
+                let jar = jar.remove(Cookie::from("auth"));
+                return (jar, Redirect::to("/auth").into_response());
             }
         }
     } else {
-        return Redirect::to("/auth").into_response();
+        // no auth cookie - redirect to auth page
+        return (jar, Redirect::to("/auth").into_response());
     }
 
-    // query user_id in database to identify user
-    // clear cookie if user entry doesn't exist
+    // user database entry is available to render dashboard
+    // user_token_entry
 
-    DashboardTemplate {}.into_response()
+    (jar, DashboardTemplate {}.into_response())
 }
 
 #[derive(Template, WebTemplate)]
 #[template(path = "welcome.html")]
 struct WelcomeTemplate {}
 
-async fn welcome() -> WelcomeTemplate {
-    WelcomeTemplate {}
+async fn welcome(jar: PrivateCookieJar) -> Response {
+    // check if auth cookie present
+    if let Some(_user_id) = jar.get("auth") {
+        // redirect authenticated user to dashboard
+        return Redirect::to("/dashboard").into_response();
+    }
+
+    // no auth cookie - continue to authenticate
+
+    WelcomeTemplate {}.into_response()
 }
 
 #[derive(Template, WebTemplate)]
@@ -85,11 +112,18 @@ async fn landing() -> LandingTemplate {
     LandingTemplate {}
 }
 
+async fn logout(jar: PrivateCookieJar) -> (PrivateCookieJar, StatusCode) {
+    // Clear the auth cookie
+    let updated_jar = jar.remove(Cookie::from("auth"));
+    (updated_jar, StatusCode::OK)
+}
+
 pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/", get(landing))
         .route("/auth", get(welcome))
         .route("/dashboard", get(dashboard))
+        .route("/logout", post(logout))
         .with_state(state)
 }
 
