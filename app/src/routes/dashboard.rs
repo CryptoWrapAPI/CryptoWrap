@@ -17,7 +17,9 @@ use sea_orm::{EntityTrait, QueryFilter};
 
 #[derive(Template, WebTemplate)]
 #[template(path = "dashboard.html")]
-struct DashboardTemplate {}
+struct DashboardTemplate {
+    user_uuid: String,
+}
 
 // async fn dashboard(cookies: Cookies) -> Response {
 async fn dashboard(state: State<AppState>, jar: PrivateCookieJar) -> (PrivateCookieJar, Response) {
@@ -85,7 +87,13 @@ async fn dashboard(state: State<AppState>, jar: PrivateCookieJar) -> (PrivateCoo
     // user database entry is available to render dashboard
     // user_token_entry
 
-    (jar, DashboardTemplate {}.into_response())
+    (
+        jar,
+        DashboardTemplate {
+            user_uuid: user_token_entry.id.to_string(),
+        }
+        .into_response(),
+    )
 }
 
 #[derive(Template, WebTemplate)]
