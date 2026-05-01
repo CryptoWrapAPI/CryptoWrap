@@ -78,17 +78,26 @@ function createAssetItem(coin) {
     return item;
 }
 
-function loadCoinBalance(coin) {
-    // Mock API call - replace with real endpoint when available
-    setTimeout(() => {
+async function loadCoinBalance(coin) {
+    try {
+        const response = await fetch(`/api/dashboard/balance?asset=${coin.id}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        displayBalance(coin.id, coin.symbol, data.balance);
+    } catch (error) {
+        console.error('Error fetching balance:', error);
+        // Fallback to mock data on error
         const mockBalances = {
             'monero': 1.5432,
             'litecoin': 0.8765
         };
-
         const balance = mockBalances[coin.id] || 0;
         displayBalance(coin.id, coin.symbol, balance);
-    }, 800 + Math.random() * 400); // Random delay to simulate network
+    }
 }
 
 function displayBalance(coinId, symbol, amount) {

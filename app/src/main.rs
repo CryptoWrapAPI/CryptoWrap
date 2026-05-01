@@ -3,6 +3,7 @@ use dotenvy::dotenv;
 use routes::auth;
 use routes::checkout;
 use routes::dashboard;
+use routes::dashboard_api;
 use routes::deposit;
 use routes::qr;
 use sea_orm::{Database, DatabaseConnection};
@@ -129,7 +130,8 @@ async fn main() -> Result<(), Error> {
 
     let static_files = ServeDir::new("./assets");
 
-    let router = dashboard::router(state)
+    let router = dashboard::router(state.clone())
+        .merge(dashboard_api::router(state))
         .merge(checkout::router())
         .merge(qr::router())
         .merge(api_router)
