@@ -33,7 +33,7 @@ async fn get_balance(
     // Check for auth cookie
     if let Some(user_id) = jar.get("auth") {
         let token_id_str = user_id.value();
-        
+
         match token_id_str.parse::<Uuid>() {
             Ok(token_id) => {
                 match tokens::Entity::find_by_id(token_id).one(&state.conn).await {
@@ -101,6 +101,6 @@ async fn get_balance(
 
 pub fn router(state: AppState) -> Router {
     Router::new()
-        .route("/balance", get(get_balance))
+        .route("/api/dashboard/balance", get(get_balance))
         .with_state(state)
 }
