@@ -93,15 +93,18 @@ async fn get_balance(
     //     .copied()
     //     .unwrap_or(0.0);
 
-    let balance = 0.0;
+    let balance;
 
     // filter by asset name
     match &params.asset.to_lowercase() {
-        "monero" => {
+        s if s == "monero" => {
             balance = 1.337;
         }
-        "litecoin" => {
+        s if s == "litecoin" => {
             balance = 420.69;
+        }
+        _ => {
+            balance = 0.0;
         }
     };
 
