@@ -83,15 +83,27 @@ async fn get_balance(
 
     // Mock implementation - replace with actual balance fetching logic
     // In a real implementation, you would fetch the balance for this specific user (user_token)
-    let mock_balances = std::collections::HashMap::from([
-        ("monero".to_string(), 1.5432),
-        ("litecoin".to_string(), 0.8765),
-    ]);
+    // let mock_balances = std::collections::HashMap::from([
+    //     ("monero".to_string(), 1.5432),
+    //     ("litecoin".to_string(), 0.8765),
+    // ]);
 
-    let balance = mock_balances
-        .get(&params.asset.to_lowercase())
-        .copied()
-        .unwrap_or(0.0);
+    // let balance = mock_balances
+    //     .get(&params.asset.to_lowercase())
+    //     .copied()
+    //     .unwrap_or(0.0);
+
+    let balance = 0.0;
+
+    // filter by asset name
+    match &params.asset.to_lowercase() {
+        "monero" => {
+            balance = 1.337;
+        }
+        "litecoin" => {
+            balance = 420.69;
+        }
+    };
 
     Ok(Json(BalanceResponse {
         asset: params.asset,

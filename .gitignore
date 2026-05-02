@@ -1,3 +1,4 @@
 .env
 c-w.cv
 crypto/
+app/rustc*
