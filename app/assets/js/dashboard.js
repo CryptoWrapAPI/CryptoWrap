@@ -190,7 +190,7 @@ function refreshIndividualBalance(coin) {
     // Reload balance for specific coin
     loadCoinBalance(coin);
 
-    // Remove loading class after animation completes
+    // Re-enable button after animation completes
     setTimeout(() => {
         refreshBtn.classList.remove('loading');
     }, 1500);

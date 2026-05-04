@@ -254,6 +254,10 @@ body {
     fill: white;
 }
 
+.asset-icon .refresh-individual.loading {
+    pointer-events: none;
+}
+
 .asset-icon .refresh-individual.loading svg {
     animation: spin 1s linear infinite;
 }
