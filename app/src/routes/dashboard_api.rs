@@ -118,7 +118,7 @@ async fn get_balance(
                     .await
                     .expect("Failed to get Monero balance for account")
                     .unlocked_balance;
-            balance = monero_helper::piconero_to_xmr_string(balance_in_piconero);
+            balance = monero_helper::piconero_to_xmr_string(balance_in_piconero, true);
             // show decimal precision (?)
         }
         s if s == "litecoin" => {

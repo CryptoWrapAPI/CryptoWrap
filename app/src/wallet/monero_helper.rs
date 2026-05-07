@@ -5,15 +5,17 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, Qu
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
-pub fn piconero_to_xmr_string(amount: u64) -> String {
+pub fn piconero_to_xmr_string(amount: u64, show_decimal_precision: bool) -> String {
     let whole = amount / 1_000_000_000_000;
     let fraction = amount % 1_000_000_000_000;
     if fraction == 0 {
         whole.to_string()
     } else {
-        let fraction_str = format!("{:012}", fraction);
-        let fraction_trimmed = fraction_str.trim_end_matches('0');
-        format!("{}.{}", whole, fraction_trimmed)
+        let mut fraction_str = format!("{:012}", fraction);
+        if !show_decimal_precision {
+            fraction_str = fraction_str.trim_end_matches('0').to_string();
+        }
+        format!("{}.{}", whole, fraction_str)
     }
 }
 
@@ -193,7 +195,7 @@ pub async fn check_for_inbound_transfers_confirmed_or_mempool_with_min_height(
     if has_pool {
         // Pool transfers exist - payment is detected but not fully confirmed
         Ok(DepositCheckResult {
-            amount_received: piconero_to_xmr_string(total_amount),
+            amount_received: piconero_to_xmr_string(total_amount, false),
             confirmations: None,
             txids,
             payment_status: "detected".to_string(),
@@ -208,7 +210,7 @@ pub async fn check_for_inbound_transfers_confirmed_or_mempool_with_min_height(
             .unwrap_or(0);
 
         Ok(DepositCheckResult {
-            amount_received: piconero_to_xmr_string(total_amount),
+            amount_received: piconero_to_xmr_string(total_amount, false),
             confirmations: Some(min_confirmations as i32),
             txids,
             payment_status: "confirmed".to_string(),
