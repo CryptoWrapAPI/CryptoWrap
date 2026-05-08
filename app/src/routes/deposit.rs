@@ -332,7 +332,7 @@ pub async fn check(
             };
 
             let amount_received_litoshi = total_balance.saturating_sub(initial_balance);
-            let amount_received = litoshi_to_ltc(amount_received_litoshi);
+            let amount_received = litoshi_to_ltc(amount_received_litoshi, false);
 
             // confirmations is Monero-specific; skip for Litecoin
             let confirmations: Option<i32> = None;

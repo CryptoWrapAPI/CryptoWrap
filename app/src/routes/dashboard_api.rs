@@ -1,15 +1,16 @@
 use crate::AppState;
+use crate::entity::litecoin_wallet as litecoin_wallet_entity;
 use crate::entity::tokens;
+use crate::wallet::litecoin as litecoin_wallet_module;
 use crate::wallet::litecoin_helper;
-use crate::wallet::monero as monero_wallet;
-// use crate::wallet::litecoin as litecoin_wallet;
+use crate::wallet::monero as monero_wallet_module;
 use crate::wallet::monero_helper;
 use axum::extract::{Query, State};
 use axum::response::Json;
 use axum::{Router, routing::get};
 use axum_extra::extract::cookie::PrivateCookieJar;
 use hyper::StatusCode;
-use sea_orm::EntityTrait;
+use sea_orm::{ColumnTrait, EntityTrait, ExprTrait, QueryFilter, QuerySelect};
 use serde::{Deserialize, Serialize};
 // use std::slice::from_ref;
 use uuid::Uuid;
@@ -117,14 +118,13 @@ async fn get_balance(
             .expect("Monero wallet error");
 
             let balance_in_piconero =
-                monero_wallet::get_account_balance(&state.monero_wallet, user_major_index)
+                monero_wallet_module::get_account_balance(&state.monero_wallet, user_major_index)
                     .await
                     .expect("Failed to get Monero balance for account")
                     .unlocked_balance;
             balance = monero_helper::piconero_to_xmr_string(balance_in_piconero, true);
         }
         s if s == "litecoin" => {
-            balance = "420.69".to_string();
             let ltc_acc_index = litecoin_helper::ensure_litecoin_account_index_for_user(
                 &user_entry,
                 &state.litecoin_wallet,
@@ -143,7 +143,36 @@ async fn get_balance(
             //  > this means after spending coins (outgoing tx) -> keep_track will set to false as well as is_available
             //
 
-            // let balance_in_litoshi = &state.litecoin_wallet.get_balance()
+            // get addresses from litecoin_wallet with keep_track TRUE and is_change TRUE -- of current user
+            let addresses: Vec<String> = litecoin_wallet_entity::Entity::find()
+                .filter(litecoin_wallet_entity::Column::AccountIndex.eq(ltc_acc_index as i32))
+                // .filter(litecoin_wallet_entity::Column::KeepTrack.eq(true))
+                // .filter(litecoin_wallet_entity::Column::IsChange.eq(true))
+                .filter(
+                    litecoin_wallet_entity::Column::KeepTrack
+                        .eq(true)
+                        .or(litecoin_wallet_entity::Column::IsChange.eq(true)),
+                )
+                // .select_only()
+                // .column(litecoin_wallet_entity::Column::WalletAddress)
+                .all(&state.conn)
+                .await
+                .expect("Failed to fetch Litecoin addresses")
+                .into_iter()
+                .map(|model| model.wallet_address)
+                .collect();
+
+            let balance_in_litoshi = state
+                .litecoin_wallet
+                .get_balance(&addresses)
+                .await
+                .expect("Failed to get Litecoin balance");
+
+            let total_balance: u64 = addresses
+                .iter()
+                .filter_map(|addr| balance_in_litoshi.get(addr).map(|e| e.confirmed))
+                .sum();
+            balance = litecoin_wallet_module::litoshi_to_ltc(total_balance, true);
         }
         _ => {
             balance = "0.0".to_string();
