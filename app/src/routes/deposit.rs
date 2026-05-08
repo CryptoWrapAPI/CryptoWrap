@@ -309,6 +309,21 @@ pub async fn check(
                     ("detected".to_string(), false)
                 } else {
                     // All balance is confirmed
+
+                    // set keep_track to true if new UTXO is detected (e.g. detected or confirmed, or just confirmed ?)
+                    // let's just set keep_track on confirmed for now, though litecoin confirmations takes ~2 minutes
+
+                    // this code block also means it's last check of the address - so it's fine
+
+                    // ltc_entry.keep_track = true;
+                    let mut ltc_active_model: litecoin_wallet::ActiveModel =
+                        ltc_entry.clone().into();
+                    ltc_active_model.keep_track = Set(true);
+                    ltc_active_model
+                        .update(&state.conn)
+                        .await
+                        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
                     ("confirmed".to_string(), true)
                 }
             } else {

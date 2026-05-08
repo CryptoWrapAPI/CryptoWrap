@@ -11,7 +11,7 @@ use axum_extra::extract::cookie::PrivateCookieJar;
 use hyper::StatusCode;
 use sea_orm::EntityTrait;
 use serde::{Deserialize, Serialize};
-use std::slice::from_ref;
+// use std::slice::from_ref;
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
@@ -124,7 +124,7 @@ async fn get_balance(
             balance = monero_helper::piconero_to_xmr_string(balance_in_piconero, true);
         }
         s if s == "litecoin" => {
-            // balance = "420.69".to_string();
+            balance = "420.69".to_string();
             let ltc_acc_index = litecoin_helper::ensure_litecoin_account_index_for_user(
                 &user_entry,
                 &state.litecoin_wallet,
@@ -133,7 +133,15 @@ async fn get_balance(
             .await
             .expect("Litecoin wallet error");
 
-            // here we need to gather all unspent addresses (with UTXO/s) + change address
+            // here we need to gather all uspent addresses (with UTXO/s) + change address
+            //
+            // sql query to get litecoin_wallet addresses with keep_track (N) - true and is_change - true (1)
+            // list of addresses send to get_balance(<here>)
+            //
+            // but exclude is_available? (because new payments detected by confirmed address balance)
+            //  --- finalizer won't re-use (set free - is_available to true) if keep_track is true
+            //  > this means after spending coins (outgoing tx) -> keep_track will set to false as well as is_available
+            //
 
             // let balance_in_litoshi = &state.litecoin_wallet.get_balance()
         }

@@ -17,6 +17,7 @@ pub struct Model {
     pub is_available: Option<bool>,
     pub is_change: bool,
     pub initial_balance: Option<String>,
+    pub keep_track: bool,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
