@@ -1,6 +1,8 @@
 use crate::AppState;
 use crate::entity::tokens;
+use crate::wallet::litecoin_helper;
 use crate::wallet::monero as monero_wallet;
+// use crate::wallet::litecoin as litecoin_wallet;
 use crate::wallet::monero_helper;
 use axum::extract::{Query, State};
 use axum::response::Json;
@@ -9,6 +11,7 @@ use axum_extra::extract::cookie::PrivateCookieJar;
 use hyper::StatusCode;
 use sea_orm::EntityTrait;
 use serde::{Deserialize, Serialize};
+use std::slice::from_ref;
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
@@ -119,10 +122,20 @@ async fn get_balance(
                     .expect("Failed to get Monero balance for account")
                     .unlocked_balance;
             balance = monero_helper::piconero_to_xmr_string(balance_in_piconero, true);
-            // show decimal precision (?)
         }
         s if s == "litecoin" => {
-            balance = "420.69".to_string();
+            // balance = "420.69".to_string();
+            let ltc_acc_index = litecoin_helper::ensure_litecoin_account_index_for_user(
+                &user_entry,
+                &state.litecoin_wallet,
+                &state.conn,
+            )
+            .await
+            .expect("Litecoin wallet error");
+
+            // here we need to gather all unspent addresses (with UTXO/s) + change address
+
+            // let balance_in_litoshi = &state.litecoin_wallet.get_balance()
         }
         _ => {
             balance = "0.0".to_string();
