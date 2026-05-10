@@ -42,12 +42,12 @@ impl MigrationTrait for Migration {
 #[derive(DeriveIden)]
 enum MoneroWallet {
     Table,
-    Id,
-    MajorIndex,
-    MinorIndex,
-    WalletAddress,
-    CreatedAt,
-    LastUsedAt,
-    BlockchainHeight,
-    IsAvailable,
+    // Id,
+    // MajorIndex,
+    // MinorIndex,
+    // WalletAddress,
+    // CreatedAt,
+    // LastUsedAt,
+    // BlockchainHeight,
+    // IsAvailable,
 }

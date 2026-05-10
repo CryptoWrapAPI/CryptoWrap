@@ -6,15 +6,15 @@ pub struct Migration;
 #[derive(DeriveIden)]
 enum LitecoinWallet {
     Table,
-    Id,
-    AccountIndex,
-    AddressIndex,
-    WalletAddress,
-    CreatedAt,
-    LastUsedAt,
-    BlockchainHeight,
-    IsAvailable,
-    IsChange,
+    // Id,
+    // AccountIndex,
+    // AddressIndex,
+    // WalletAddress,
+    // CreatedAt,
+    // LastUsedAt,
+    // BlockchainHeight,
+    // IsAvailable,
+    // IsChange,
 }
 
 #[async_trait::async_trait]

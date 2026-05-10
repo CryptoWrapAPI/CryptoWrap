@@ -4,7 +4,6 @@ pub mod prelude;
 
 pub mod deposits;
 pub mod fiat_prices;
-// pub mod invoices;
 pub mod litecoin_wallet;
 pub mod monero_wallet;
 pub mod tokens;
