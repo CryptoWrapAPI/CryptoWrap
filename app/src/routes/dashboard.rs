@@ -59,7 +59,8 @@ async fn dashboard(state: State<AppState>, jar: PrivateCookieJar) -> (PrivateCoo
                         println!("Token not found: {}", token_id);
                         // clear cookie
                         let jar = jar.remove(Cookie::from("auth"));
-                        return (jar, Redirect::to("/auth").into_response());
+                        // return (jar, Redirect::to("/auth").into_response());
+                        return (jar, Redirect::to("/").into_response());
                     }
                     Err(e) => {
                         // response with 500 error?
@@ -118,21 +119,21 @@ async fn dashboard(state: State<AppState>, jar: PrivateCookieJar) -> (PrivateCoo
     )
 }
 
-#[derive(Template, WebTemplate)]
-#[template(path = "welcome.html")]
-struct WelcomeTemplate {}
+// #[derive(Template, WebTemplate)]
+// #[template(path = "welcome.html")]
+// struct WelcomeTemplate {}
 
-async fn welcome(jar: PrivateCookieJar) -> Response {
-    // check if auth cookie present
-    if let Some(_user_id) = jar.get("auth") {
-        // redirect authenticated user to dashboard
-        return Redirect::to("/dashboard").into_response();
-    }
+// async fn welcome(jar: PrivateCookieJar) -> Response {
+//     // check if auth cookie present
+//     if let Some(_user_id) = jar.get("auth") {
+//         // redirect authenticated user to dashboard
+//         return Redirect::to("/dashboard").into_response();
+//     }
 
-    // no auth cookie - continue to authenticate
+//     // no auth cookie - continue to authenticate
 
-    WelcomeTemplate {}.into_response()
-}
+//     WelcomeTemplate {}.into_response()
+// }
 
 #[derive(Template, WebTemplate)]
 #[template(path = "landing.html")]
@@ -151,7 +152,7 @@ async fn logout(jar: PrivateCookieJar) -> (PrivateCookieJar, StatusCode) {
 pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/", get(landing))
-        .route("/auth", get(welcome))
+        // .route("/auth", get(welcome))
         .route("/dashboard", get(dashboard))
         .route("/logout", post(logout))
         .with_state(state)

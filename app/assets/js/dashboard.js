@@ -554,13 +554,14 @@ async function handleLogout() {
             });
 
             if (response.ok) {
-                window.location.href = '/auth';
+                // window.location.href = '/auth';
+                window.location.href = '/';
             } else {
                 throw new Error('Logout failed');
             }
         } catch (error) {
             console.error('Error during logout:', error);
-            window.location.href = '/auth';
+            // window.location.href = '/auth';
         }
     }
 }

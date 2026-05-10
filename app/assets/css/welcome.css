@@ -1,24 +1,24 @@
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    background-color: #0a0a0f;
-    background-image:
-        linear-gradient(rgba(100, 150, 255, 0.1) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(100, 150, 255, 0.1) 1px, transparent 1px),
-        linear-gradient(rgba(100, 150, 255, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(100, 150, 255, 0.05) 1px, transparent 1px);
-    background-size: 50px 50px, 50px 50px, 10px 10px, 10px 10px;
-    background-position: 0 0, 0 0, 0 0, 0 0;
-    padding: 1rem;
-}
+/* * { */
+    /* box-sizing: border-box; */
+    /* margin: 0; */
+    /* padding: 0; */
+/* } */
+/* body { */
+    /* font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; */
+    /* display: flex; */
+    /* justify-content: center; */
+    /* align-items: center; */
+    /* min-height: 100vh; */
+    /* background-color: #0a0a0f; */
+    /* background-image: */
+        /* linear-gradient(rgba(100, 150, 255, 0.1) 1px, transparent 1px), */
+        /* linear-gradient(90deg, rgba(100, 150, 255, 0.1) 1px, transparent 1px), */
+        /* linear-gradient(rgba(100, 150, 255, 0.05) 1px, transparent 1px), */
+        /* linear-gradient(90deg, rgba(100, 150, 255, 0.05) 1px, transparent 1px); */
+    /* background-size: 50px 50px, 50px 50px, 10px 10px, 10px 10px; */
+    /* background-position: 0 0, 0 0, 0 0, 0 0; */
+    /* padding: 1rem; */
+/* } */
 .auth-container {
     background: #020204d6;
     padding: 1.25rem;
@@ -57,7 +57,7 @@ input[type="password"]::placeholder {
     color: #555;
 }
 button {
-    width: 100%;
+    /* width: 100%; */
     padding: 0.75rem;
     border: none;
     border-radius: 8px;
