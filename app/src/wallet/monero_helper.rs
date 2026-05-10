@@ -9,7 +9,8 @@ pub fn piconero_to_xmr_string(amount: u64, show_decimal_precision: bool) -> Stri
     let whole = amount / 1_000_000_000_000;
     let fraction = amount % 1_000_000_000_000;
     if fraction == 0 {
-        whole.to_string()
+        // whole.to_string()
+        format!("{}.{:012}", whole, fraction)
     } else {
         let mut fraction_str = format!("{:012}", fraction);
         if !show_decimal_precision {

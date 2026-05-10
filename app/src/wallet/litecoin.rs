@@ -156,7 +156,8 @@ pub fn litoshi_to_ltc(amount: u64, show_decimal_precision: bool) -> String {
     let whole = amount / 100_000_000;
     let fraction = amount % 100_000_000;
     if fraction == 0 {
-        whole.to_string()
+        // whole.to_string()
+        format!("{}.{:08}", whole, fraction)
     } else {
         let mut fraction_str = format!("{:08}", fraction);
         // let mut fraction_trimmed = fraction_str.clone();
