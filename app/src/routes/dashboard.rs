@@ -145,7 +145,9 @@ async fn landing() -> LandingTemplate {
 
 async fn logout(jar: PrivateCookieJar) -> (PrivateCookieJar, StatusCode) {
     // Clear the auth cookie
-    let updated_jar = jar.remove(Cookie::from("auth"));
+    let updated_jar = jar
+        .remove(Cookie::from("auth"))
+        .remove(Cookie::from("auth_js"));
     (updated_jar, StatusCode::OK)
 }
 

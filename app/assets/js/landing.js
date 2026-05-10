@@ -1,6 +1,17 @@
 // Landing Page - Welcome Modal
 
+// Check if user is already authenticated via cookie
+function checkAuthCookie() {
+    const cookies = document.cookie.split(';').map(c => c.trim());
+    const hasAuth = cookies.some(c => c.startsWith('auth_js'));
+    if (hasAuth) {
+        window.location.href = '/dashboard';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    checkAuthCookie();
+
     const openModalBtn = document.getElementById('open-auth-modal');
     if (!openModalBtn) return;
 
@@ -271,7 +282,7 @@ function addModalStyles() {
         .welcome-form {
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            <!-- gap: 1rem; -->
         }
 
         .welcome-subtitle {

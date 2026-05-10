@@ -119,6 +119,14 @@ async fn login_or_register(
     // cookie.set_domain("c-w.cv"); // assign to current domain
 
     let updated_jar = jar.add(cookie);
+
+    // Add a separate non-http_only cookie for JS detection
+    let mut js_cookie = Cookie::new("auth_js", "");
+    js_cookie.set_path("/");
+    js_cookie.set_secure(true);
+    js_cookie.set_max_age(Duration::days(365));
+
+    let updated_jar = updated_jar.add(js_cookie);
     (updated_jar, StatusCode::OK)
 }
 
