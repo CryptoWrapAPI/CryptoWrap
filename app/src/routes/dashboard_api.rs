@@ -190,3 +190,5 @@ pub fn router(state: AppState) -> Router {
         .route("/api/dashboard/balance", get(get_balance))
         .with_state(state)
 }
+
+// endpoint to withdraw (send all coins, e.g. sweep_all) --- actually - using amount, it is `send`

@@ -121,7 +121,7 @@ async fn login_or_register(
     let updated_jar = jar.add(cookie);
 
     // Add a separate non-http_only cookie for JS detection
-    let mut js_cookie = Cookie::new("auth_js", "");
+    let mut js_cookie = Cookie::new("auth_js", token_model.created_at.to_string());
     js_cookie.set_path("/");
     js_cookie.set_secure(true);
     js_cookie.set_max_age(Duration::days(365));

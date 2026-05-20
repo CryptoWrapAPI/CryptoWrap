@@ -58,7 +58,9 @@ async fn dashboard(state: State<AppState>, jar: PrivateCookieJar) -> (PrivateCoo
                     Ok(None) => {
                         println!("Token not found: {}", token_id);
                         // clear cookie
-                        let jar = jar.remove(Cookie::from("auth"));
+                        let jar = jar
+                            .remove(Cookie::from("auth"))
+                            .remove(Cookie::from("auth_js"));
                         // return (jar, Redirect::to("/auth").into_response());
                         return (jar, Redirect::to("/").into_response());
                     }
@@ -79,13 +81,16 @@ async fn dashboard(state: State<AppState>, jar: PrivateCookieJar) -> (PrivateCoo
             Err(_) => {
                 // token uuid is invalid
                 // clear cookie
-                let jar = jar.remove(Cookie::from("auth"));
-                return (jar, Redirect::to("/auth").into_response());
+                let jar = jar
+                    .remove(Cookie::from("auth"))
+                    .remove(Cookie::from("auth_js"));
+                return (jar, Redirect::to("/").into_response());
             }
         }
     } else {
+        let jar = jar.remove(Cookie::from("auth_js")); // remove auth_js to make sure dashboard.js won't trigger redirect
         // no auth cookie - redirect to auth page
-        return (jar, Redirect::to("/auth").into_response());
+        return (jar, Redirect::to("/").into_response());
     }
 
     // user database entry is available to render dashboard
