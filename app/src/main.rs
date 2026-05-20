@@ -6,6 +6,7 @@ use routes::dashboard;
 use routes::dashboard_api;
 use routes::deposit;
 use routes::qr;
+use routes::withdraw;
 use sea_orm::{Database, DatabaseConnection};
 use std::io::Error;
 use std::net::{Ipv4Addr, SocketAddr};
@@ -131,9 +132,10 @@ async fn main() -> Result<(), Error> {
     let static_files = ServeDir::new("./assets");
 
     let router = dashboard::router(state.clone())
-        .merge(dashboard_api::router(state))
+        .merge(dashboard_api::router(state.clone()))
         .merge(checkout::router())
         .merge(qr::router())
+        .merge(withdraw::router(state))
         .merge(api_router)
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", api.clone()))
         .nest_service("/assets", static_files)

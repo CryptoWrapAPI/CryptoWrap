@@ -233,7 +233,7 @@ function openWithdrawModal(coin) {
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Auth Token</label>
+                        <label class="form-label">Confirm Transaction</label>
                         <input 
                             type="password" 
                             class="form-input" 
@@ -334,7 +334,7 @@ function openWithdrawModal(coin) {
     form.addEventListener('submit', (e) => handleWithdrawSubmit(e, coin, modal));
 }
 
-function handleWithdrawSubmit(e, coin, modal) {
+async function handleWithdrawSubmit(e, coin, modal) {
     e.preventDefault();
 
     const form = e.target;
@@ -348,12 +348,39 @@ function handleWithdrawSubmit(e, coin, modal) {
         auth_token: formData.get('auth_token')
     };
 
-    console.log('Submitting withdrawal:', withdrawData);
+    const sendBtn = form.querySelector('.btn-modal-send');
+    const cancelBtn = form.querySelector('.btn-modal-cancel');
+    const originalText = sendBtn.textContent;
 
-    // TODO: Replace with actual API call when endpoint is available
-    // Example: POST /api/transactions/withdraw
-    alert(`Withdrawal submitted for ${coin.name}. Please check the backend logs for verification.`);
-    modal.remove();
+    sendBtn.disabled = true;
+    cancelBtn.disabled = true;
+    sendBtn.innerHTML = '<span class="btn-spinner"></span> Sending...';
+
+    try {
+        const response = await fetch('/api/withdraw', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(withdrawData)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            alert(`Transaction sent successfully!\nTransaction ID: ${data.transaction_id}`);
+            modal.remove();
+        } else {
+            alert(`Withdrawal failed: ${data.error}`);
+            sendBtn.disabled = false;
+            cancelBtn.disabled = false;
+            sendBtn.textContent = originalText;
+        }
+    } catch (error) {
+        console.error('Withdrawal error:', error);
+        alert('Network error. Please try again.');
+        sendBtn.disabled = false;
+        cancelBtn.disabled = false;
+        sendBtn.textContent = originalText;
+    }
 }
 
 function addModalStyles() {
@@ -517,6 +544,32 @@ function addModalStyles() {
         .btn-modal-send:active,
         .btn-modal-cancel:active {
             transform: scale(0.98);
+        }
+
+        .btn-modal-send:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .btn-modal-cancel:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: btn-spin 0.6s linear infinite;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+
+        @keyframes btn-spin {
+            to { transform: rotate(360deg); }
         }
 
         @media (max-width: 480px) {
