@@ -366,8 +366,8 @@ async function handleWithdrawSubmit(e, coin, modal) {
         const data = await response.json();
 
         if (data.success) {
-            alert(`Transaction sent successfully!\nTransaction ID: ${data.transaction_id}`);
             modal.remove();
+            showSuccessModal(data.transaction_id, coin);
         } else {
             alert(`Withdrawal failed: ${data.error}`);
             sendBtn.disabled = false;
@@ -381,6 +381,63 @@ async function handleWithdrawSubmit(e, coin, modal) {
         cancelBtn.disabled = false;
         sendBtn.textContent = originalText;
     }
+}
+
+function showSuccessModal(transactionId, coin) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'success-modal';
+    modal.innerHTML = `
+        <div class="modal-content success-modal">
+            <div class="modal-header">
+                <h3>Transaction Sent</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="success-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <p class="success-text">Your ${coin.name} withdrawal has been sent.</p>
+                <div class="tx-id-group">
+                    <label class="form-label">Transaction ID</label>
+                    <div class="tx-id-row">
+                        <input type="text" class="form-input tx-id-input" value="${transactionId}" readonly>
+                        <button class="btn-copy-tx">Copy</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal-close">Close</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const closeBtn = modal.querySelector('.modal-close');
+    const closeFooterBtn = modal.querySelector('.btn-modal-close');
+    const copyBtn = modal.querySelector('.btn-copy-tx');
+    const txInput = modal.querySelector('.tx-id-input');
+
+    const close = () => modal.remove();
+    closeBtn.addEventListener('click', close);
+    closeFooterBtn.addEventListener('click', close);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) close();
+    });
+
+    copyBtn.addEventListener('click', () => {
+        txInput.select();
+        navigator.clipboard.writeText(txInput.value).then(() => {
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => { copyBtn.textContent = 'Copy'; }, 2000);
+        }).catch(() => {
+            copyBtn.textContent = 'Copy';
+        });
+    });
 }
 
 function addModalStyles() {
@@ -570,6 +627,87 @@ function addModalStyles() {
 
         @keyframes btn-spin {
             to { transform: rotate(360deg); }
+        }
+
+        .success-modal .modal-body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 1.25rem;
+        }
+
+        .success-icon {
+            margin-top: 0.5rem;
+        }
+
+        .success-text {
+            color: #c0c0c0;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        .tx-id-group {
+            width: 100%;
+            text-align: left;
+        }
+
+        .tx-id-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .tx-id-input {
+            flex: 1;
+            font-family: monospace;
+            font-size: 0.8rem;
+            letter-spacing: 0.3px;
+            cursor: default;
+        }
+
+        .btn-copy-tx {
+            padding: 0.75rem 1rem;
+            background: linear-gradient(135deg, #3a5fc8 0%, #6a3ad9 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+        }
+
+        .btn-copy-tx:hover {
+            background: linear-gradient(135deg, #6a3ad9 0%, #3a5fc8 100%);
+        }
+
+        .btn-copy-tx:active {
+            transform: scale(0.97);
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: center;
+            padding: 0 1.5rem 1.5rem;
+        }
+
+        .btn-modal-close {
+            padding: 0.75rem 2rem;
+            background: transparent;
+            color: #6a96ff;
+            border: 2px solid #6a96ff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-modal-close:hover {
+            background: #6a96ff;
+            color: white;
         }
 
         @media (max-width: 480px) {
