@@ -12,6 +12,7 @@ pub struct Model {
     pub coin_id: String,
     pub destination_address: String,
     pub created_at: DateTime,
+    pub transaction_hash: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -20,11 +20,53 @@ pub fn piconero_to_xmr_string(amount: u64, show_decimal_precision: bool) -> Stri
     }
 }
 
+pub fn xmr_to_piconero(amount: &str) -> Result<u64, MoneroHelperError> {
+    let value: f64 = amount
+        .parse()
+        .map_err(|_| MoneroHelperError::InvalidAmount(amount.to_string()))?;
+    Ok((value * 1_000_000_000_000.0) as u64)
+}
+
+fn validate_monero_address(address: &str) -> Result<(), MoneroHelperError> {
+    let valid_len = matches!(address.len(), 95 | 106);
+    if !valid_len {
+        return Err(MoneroHelperError::InvalidAddress(address.to_string()));
+    }
+    if !address
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() && c != '0' && c != 'O' && c != 'I' && c != 'l')
+    {
+        return Err(MoneroHelperError::InvalidAddress(address.to_string()));
+    }
+    Ok(())
+}
+
+pub async fn transfer_xmr(
+    wallet: &MoneroWallet,
+    destination_address: &str,
+    amount_atomic: u64,
+    account_index: u32,
+) -> Result<String, MoneroHelperError> {
+    validate_monero_address(destination_address)?;
+    let params = monero::TransferParams {
+        destinations: vec![monero::TransferDestination {
+            amount: amount_atomic,
+            address: destination_address.to_string(),
+        }],
+        account_index,
+        ..Default::default()
+    };
+    let response = monero::transfer(wallet, params).await?;
+    Ok(response.tx_hash)
+}
+
 /// Custom error type for Monero helper functions.
 #[derive(Debug)]
 pub enum MoneroHelperError {
     MoneroRpc(MoneroError),
     Db(sea_orm::DbErr),
+    InvalidAmount(String),
+    InvalidAddress(String),
     // NotFound(String),
 }
 
@@ -33,6 +75,12 @@ impl Display for MoneroHelperError {
         match self {
             MoneroHelperError::MoneroRpc(err) => write!(f, "Monero RPC error: {}", err),
             MoneroHelperError::Db(err) => write!(f, "Database error: {}", err),
+            MoneroHelperError::InvalidAmount(amount) => {
+                write!(f, "Invalid XMR amount: {amount}")
+            }
+            MoneroHelperError::InvalidAddress(addr) => {
+                write!(f, "Invalid Monero address: {addr}")
+            }
             // MoneroHelperError::NotFound(msg) => write!(f, "Not Found: {}", msg),
         }
     }

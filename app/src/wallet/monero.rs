@@ -58,7 +58,12 @@ impl MoneroWallet {
         // debug!(response = %pretty_json(&rpc_response), "Monero RPC response");
 
         if let Some(error) = rpc_response.get("error") {
-            return Err(MoneroError::Rpc(error.to_string()));
+            let msg = error
+                .get("message")
+                .and_then(|m| m.as_str())
+                .unwrap_or(&error.to_string())
+                .to_string();
+            return Err(MoneroError::Rpc(msg));
         }
 
         let result = rpc_response
@@ -220,4 +225,47 @@ pub async fn get_account_balance(
 pub struct AccountBalanceResponse {
     pub unlocked_balance: u64, // atomic units (e.g. piconeros for monero, satoshi for btc, litoshi for ltc, etc...)
                                // use term `unlocked` just like in monero wallet rpc (docs), other coins implementation can handle it differently
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct TransferParams {
+    pub destinations: Vec<TransferDestination>,
+    pub account_index: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub subaddr_indices: Option<Vec<u32>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub priority: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ring_size: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unlock_time: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub get_tx_key: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub do_not_relay: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub get_tx_hex: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub get_tx_metadata: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransferResponse {
+    pub amount: u64,
+    pub fee: u64,
+    pub multisig_txset: String,
+    pub tx_blob: String,
+    pub tx_hash: String,
+    pub tx_key: String,
+    pub tx_metadata: String,
+    pub unsigned_txset: String,
+}
+
+pub async fn transfer(
+    wallet: &MoneroWallet,
+    params: TransferParams,
+) -> Result<TransferResponse, MoneroError> {
+    wallet
+        .rpc_request("transfer", serde_json::to_value(params)?)
+        .await
 }

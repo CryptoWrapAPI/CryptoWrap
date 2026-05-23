@@ -1,11 +1,13 @@
 use crate::AppState;
-use crate::entity::tokens;
+use crate::entity::{tokens, withdrawals};
+use crate::wallet::monero_helper;
 use axum::extract::State;
 use axum::response::Json;
 use axum::{Router, routing::post};
 use axum_extra::extract::cookie::PrivateCookieJar;
+use chrono::Utc;
 use hyper::StatusCode;
-use sea_orm::EntityTrait;
+use sea_orm::{ActiveModelTrait, EntityTrait, Set};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -46,18 +48,65 @@ async fn create_withdraw(
     let amount = req.amount;
     // let coin_symbol = req.coin_symbol; // BTC
 
-    // TODO: implement real withdrawal logic
-    // let mock_tx_id = Uuid::new_v4().to_string();
-
     let resulted_tx_id; // only broadcasted/relayed txs are going in the withdrawals db table
-
-    // separate my coin_id ***
     match coin_id.as_str() {
         "monero" => {
-            // XMR ___
-            // Monero withdrawal logic
+            let monero_account_index = token_entry.monero_major_index.ok_or_else(|| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    Json(ErrorResponse {
+                        error: "Monero wallet not set up for this account".to_string(),
+                    }),
+                )
+            })? as u32;
 
-            resulted_tx_id = Uuid::new_v4().to_string();
+            let amount_str = amount.to_string();
+            let amount_atomic =
+                monero_helper::xmr_to_piconero(&amount_str).map_err(|e| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        Json(ErrorResponse {
+                            error: format!("Invalid amount: {e}"),
+                        }),
+                    )
+                })?;
+
+            let tx_hash = monero_helper::transfer_xmr(
+                &state.monero_wallet,
+                &destination_address,
+                amount_atomic,
+                monero_account_index,
+            )
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ErrorResponse {
+                        error: format!("Monero transfer failed: {e}"),
+                    }),
+                )
+            })?;
+
+            let withdrawal = withdrawals::ActiveModel {
+                transaction_id: Set(Uuid::new_v4()),
+                user_uuid: Set(token_entry.id),
+                amount: Set(amount_str),
+                coin_id: Set("monero".to_string()),
+                destination_address: Set(destination_address),
+                created_at: Set(Utc::now().naive_utc()),
+                transaction_hash: Set(tx_hash.clone()),
+            };
+
+            withdrawal.insert(&state.conn).await.map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ErrorResponse {
+                        error: format!("Failed to save withdrawal: {e}"),
+                    }),
+                )
+            })?;
+
+            resulted_tx_id = tx_hash;
         }
         "litecoin" => {
             // LTC ---

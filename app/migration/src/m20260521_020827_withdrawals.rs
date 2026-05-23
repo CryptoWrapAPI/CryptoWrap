@@ -26,6 +26,7 @@ impl MigrationTrait for Migration {
                             .default(Expr::current_timestamp())
                             .not_null(),
                     )
+                    .col(string("transaction_hash").not_null()) // from actual blockchain
                     // .col(date_time("updated_at").null())
                     .to_owned(),
             )
