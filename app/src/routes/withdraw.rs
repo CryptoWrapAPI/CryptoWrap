@@ -15,6 +15,7 @@ pub struct WithdrawRequest {
     destination_address: String,
     amount: f64,
     auth_token: String,
+    // coin_symbol: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -40,16 +41,43 @@ async fn create_withdraw(
 
     validate_auth_token(&state, &req.auth_token, &token_entry).await?;
 
-    let _coin_id = req.coin_id;
-    let _destination_address = req.destination_address;
-    let _amount = req.amount;
+    let coin_id = req.coin_id; // Bitcoin
+    let destination_address = req.destination_address;
+    let amount = req.amount;
+    // let coin_symbol = req.coin_symbol; // BTC
 
     // TODO: implement real withdrawal logic
-    let mock_tx_id = Uuid::new_v4().to_string();
+    // let mock_tx_id = Uuid::new_v4().to_string();
+
+    let resulted_tx_id; // only broadcasted/relayed txs are going in the withdrawals db table
+
+    // separate my coin_id ***
+    match coin_id.as_str() {
+        "monero" => {
+            // XMR ___
+            // Monero withdrawal logic
+
+            resulted_tx_id = Uuid::new_v4().to_string();
+        }
+        "litecoin" => {
+            // LTC ---
+            // Litecoin withdrawal logic
+
+            resulted_tx_id = Uuid::new_v4().to_string();
+        }
+        _ => {
+            return Err((
+                StatusCode::NOT_IMPLEMENTED,
+                Json(ErrorResponse {
+                    error: "Invalid coin ID".to_string(),
+                }),
+            ));
+        }
+    }
 
     Ok(Json(WithdrawResponse {
         success: true,
-        transaction_id: Some(mock_tx_id),
+        transaction_id: Some(resulted_tx_id),
         error: None,
     }))
 }
