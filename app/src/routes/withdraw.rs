@@ -61,16 +61,17 @@ async fn create_withdraw(
             })? as u32;
 
             let amount_str = amount.to_string();
-            let amount_atomic =
-                monero_helper::xmr_to_piconero(&amount_str).map_err(|e| {
-                    (
-                        StatusCode::BAD_REQUEST,
-                        Json(ErrorResponse {
-                            error: format!("Invalid amount: {e}"),
-                        }),
-                    )
-                })?;
+            let amount_atomic = monero_helper::xmr_to_piconero(&amount_str).map_err(|e| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    Json(ErrorResponse {
+                        error: format!("Invalid amount: {e}"),
+                    }),
+                )
+            })?;
 
+            // default fee is x4 weight/size (base fee) multiplier (e.g. Normal)
+            // there is also x1 (unimportant) Low fee
             let tx_hash = monero_helper::transfer_xmr(
                 &state.monero_wallet,
                 &destination_address,

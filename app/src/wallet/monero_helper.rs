@@ -41,6 +41,9 @@ fn validate_monero_address(address: &str) -> Result<(), MoneroHelperError> {
     Ok(())
 }
 
+// add another endpoint that would accept an additional `fee address` for the platform fee
+// this would require to send N% of the tx volume to this address, it will act as additional tx fee
+// and naturally return error if user has exactly 100% and covered fee, so they would use 99.99% of total amount to successfully withdraw
 pub async fn transfer_xmr(
     wallet: &MoneroWallet,
     destination_address: &str,
@@ -80,8 +83,7 @@ impl Display for MoneroHelperError {
             }
             MoneroHelperError::InvalidAddress(addr) => {
                 write!(f, "Invalid Monero address: {addr}")
-            }
-            // MoneroHelperError::NotFound(msg) => write!(f, "Not Found: {}", msg),
+            } // MoneroHelperError::NotFound(msg) => write!(f, "Not Found: {}", msg),
         }
     }
 }
