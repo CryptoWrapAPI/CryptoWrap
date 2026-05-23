@@ -10,7 +10,7 @@ function checkAuthCookie() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    checkAuthCookie();
+    // checkAuthCookie();
 
     const openModalBtn = document.getElementById('open-auth-modal');
     if (!openModalBtn) return;
@@ -19,6 +19,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function openWelcomeModal() {
+
+    // checkAuthCookie();
+    const cookies = document.cookie.split(';').map(c => c.trim());
+    const hasAuth = cookies.some(c => c.startsWith('auth_js'));
+    if (hasAuth) {
+        window.location.href = '/dashboard';
+        return;
+    }
+
+    
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.id = 'welcome-modal';

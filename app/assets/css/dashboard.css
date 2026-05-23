@@ -47,6 +47,10 @@ body {
     margin-bottom: 0.25rem;
 }
 
+.logo-a {
+    text-decoration: none;
+}
+
 .header-subtitle {
     font-size: 0.85rem;
     color: #888;
