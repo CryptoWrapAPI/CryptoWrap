@@ -12,10 +12,12 @@ function checkAuthCookie() {
 document.addEventListener('DOMContentLoaded', () => {
     // checkAuthCookie();
 
-    const openModalBtn = document.getElementById('open-auth-modal');
-    if (!openModalBtn) return;
+    const openModalBtns = document.getElementsByClassName('open-auth-modal');
+    if (!openModalBtns) return;
 
-    openModalBtn.addEventListener('click', openWelcomeModal);
+    for (let i = 0; i < openModalBtns.length; i++) {
+        openModalBtns[i].addEventListener('click', openWelcomeModal)
+    };
 });
 
 function openWelcomeModal() {
