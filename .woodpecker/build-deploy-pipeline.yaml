@@ -1,4 +1,4 @@
-# .woodpecker.yaml - MINIMAL VERSION
+# workflow
 when:
   - event: push
     branch: main
