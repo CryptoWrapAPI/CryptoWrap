@@ -1,9 +1,0 @@
-when:
-  - event: push
-    branch: main
-
-steps:
-  - name: build
-    image: debian
-    commands:
-      - echo "This is the build step"
