@@ -121,7 +121,7 @@ async fn get_balance(
                 monero_wallet_module::get_account_balance(&state.monero_wallet, user_major_index)
                     .await
                     .expect("Failed to get Monero balance for account")
-                    .unlocked_balance;
+                    .unlocked_balance; // shows only unlocked - so pending `change` won't be shown - same for ltc
             balance = monero_helper::piconero_to_xmr_string(balance_in_piconero, true);
         }
         s if s == "litecoin" => {
@@ -168,11 +168,16 @@ async fn get_balance(
                 .await
                 .expect("Failed to get Litecoin balance");
 
+            // count unconfirmed too? because it can show a different balance if more utxo participats in the tx
+            // but it applied for monero as well
             let total_balance: i64 = addresses
                 .iter()
                 .filter_map(|addr| balance_in_litoshi.get(addr).map(|e| e.confirmed))
                 .sum();
-            balance = litecoin_wallet_module::litoshi_to_ltc(std::cmp::max(total_balance, 0) as u64, true);
+            balance = litecoin_wallet_module::litoshi_to_ltc(
+                std::cmp::max(total_balance, 0) as u64,
+                true,
+            );
         }
         _ => {
             balance = "0.0".to_string();
