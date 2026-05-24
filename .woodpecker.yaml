@@ -1,0 +1,29 @@
+# .woodpecker.yaml - MINIMAL VERSION
+when:
+  - event: push
+    branch: main
+
+steps:
+  - name: build
+    image: rust:1.95-bullseye
+    commands:
+      - cd app
+      - cargo build --release
+      - cp target/release/app ../release-cw
+
+  - name: deploy
+    image: appleboy/ssh-action:latest
+    settings:
+      host: ${SSH_HOST}
+      port: ${SSH_PORT:-22}
+      username: ${SSH_USER}
+      key: ${SSH_KEY}
+      script: |
+        scp -o StrictHostKeyChecking=no /woodpecker/src/github.com/CryptoWrapAPI/CryptoWrap/release-cw ${SSH_USER}@${SSH_HOST}:/opt/cryptowrap/
+        
+        ssh -o StrictHostKeyChecking=no ${SSH_USER}@${SSH_HOST} 'docker compose restart main-cv'
+    environment:
+      SSH_HOST: ${SSH_HOST}
+      SSH_USER: ${SSH_USER}
+      SSH_PORT: ${SSH_PORT}
+      SSH_KEY: ${SSH_KEY}
