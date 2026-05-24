@@ -168,11 +168,11 @@ async fn get_balance(
                 .await
                 .expect("Failed to get Litecoin balance");
 
-            let total_balance: u64 = addresses
+            let total_balance: i64 = addresses
                 .iter()
                 .filter_map(|addr| balance_in_litoshi.get(addr).map(|e| e.confirmed))
                 .sum();
-            balance = litecoin_wallet_module::litoshi_to_ltc(total_balance, true);
+            balance = litecoin_wallet_module::litoshi_to_ltc(std::cmp::max(total_balance, 0) as u64, true);
         }
         _ => {
             balance = "0.0".to_string();

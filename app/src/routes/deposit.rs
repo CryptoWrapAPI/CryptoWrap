@@ -292,8 +292,8 @@ pub async fn check(
 
             let balance_entry = balance_response.get(&wallet_address);
 
-            let confirmed = balance_entry.map(|e| e.confirmed).unwrap_or(0);
-            let unconfirmed = balance_entry.map(|e| e.unconfirmed).unwrap_or(0);
+            let confirmed: u64 = balance_entry.map(|e| e.confirmed as u64).unwrap_or(0);
+            let unconfirmed: u64 = balance_entry.map(|e| e.unconfirmed as u64).unwrap_or(0);
 
             let initial_balance: u64 = ltc_entry
                 .initial_balance

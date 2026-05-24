@@ -71,7 +71,11 @@ async fn main() -> Result<(), Error> {
         blake3_hash_token_pepper,
         cookie_key,
         monero_wallet: wallet::monero::MoneroWallet::new(&monero_wallet_rpc_address),
-        litecoin_wallet: wallet::litecoin::LitecoinWallet::new(&ltc_api_url, &ltc_mpk),
+        litecoin_wallet: {
+            let mut wallet = wallet::litecoin::LitecoinWallet::new(&ltc_api_url, &ltc_mpk);
+            wallet.set_master_private_key(&ltc_mpk);
+            wallet
+        },
         current_url,
         // tg_notificator,
     };
