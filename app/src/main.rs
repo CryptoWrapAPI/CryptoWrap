@@ -145,7 +145,7 @@ async fn main() -> Result<(), Error> {
         .nest_service("/assets", static_files)
         .layer(TraceLayer::new_for_http());
 
-    let address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 8080));
+    let address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 10013));
     let listener = TcpListener::bind(&address).await?;
 
     tracing::info!("Serving!");

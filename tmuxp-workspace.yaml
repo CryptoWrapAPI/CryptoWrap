@@ -1,0 +1,11 @@
+session_name: tmuxp-cw
+windows:
+  - window_name: dev
+    layout: tiled
+    panes:
+      # === most of the containers, including postgres db + blockchain containers are in BB (alpine)
+      # - shell_command: 
+          # - docker compose up 
+      - shell_command:
+          - cd app && bacon run-long
+
