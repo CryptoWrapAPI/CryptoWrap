@@ -382,6 +382,15 @@
         checkBtn.classList.add('hidden');
         if (timerInterval) clearInterval(timerInterval);
       }
+      if (status === 'detected' || status === 'confirmed') {
+        window.parent.postMessage(
+          JSON.stringify({
+            payment_detected: true,
+            invoice_uuid: INVOICE_UUID,
+          }),
+          '*'
+        );
+      }
     }
 
     function updateUI(data) {
