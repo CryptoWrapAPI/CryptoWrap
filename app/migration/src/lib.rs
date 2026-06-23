@@ -8,6 +8,7 @@ mod m20260411_003754_litecoin;
 mod m20260508_105009_litecoin_keep_track_bool;
 mod m20260510_110051_deposists_add_owner;
 mod m20260521_020827_withdrawals;
+mod m20260623_163122_invoices_table;
 
 pub struct Migrator;
 
@@ -23,6 +24,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260508_105009_litecoin_keep_track_bool::Migration),
             Box::new(m20260510_110051_deposists_add_owner::Migration),
             Box::new(m20260521_020827_withdrawals::Migration),
+            Box::new(m20260623_163122_invoices_table::Migration),
         ]
     }
 }
