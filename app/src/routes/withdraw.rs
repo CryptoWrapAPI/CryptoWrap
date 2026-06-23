@@ -10,6 +10,7 @@ use axum::{Router, routing::post};
 use axum_extra::extract::cookie::PrivateCookieJar;
 use chrono::Utc;
 use hyper::StatusCode;
+use rust_decimal::Decimal;
 use sea_orm::{ActiveModelTrait, EntityTrait, Set};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -18,7 +19,7 @@ use uuid::Uuid;
 pub struct WithdrawRequest {
     coin_id: String,
     destination_address: String,
-    amount: f64,
+    amount: Decimal,
     auth_token: String,
     // coin_symbol: String,
 }

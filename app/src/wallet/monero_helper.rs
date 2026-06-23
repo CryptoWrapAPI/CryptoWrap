@@ -22,10 +22,15 @@ pub fn piconero_to_xmr_string(amount: u64, show_decimal_precision: bool) -> Stri
 }
 
 pub fn xmr_to_piconero(amount: &str) -> Result<u64, MoneroHelperError> {
-    let value: f64 = amount
+    let value: rust_decimal::Decimal = amount
         .parse()
         .map_err(|_| MoneroHelperError::InvalidAmount(amount.to_string()))?;
-    Ok((value * 1_000_000_000_000.0) as u64)
+    let factor = rust_decimal::Decimal::new(1_000_000_000_000, 0);
+    use rust_decimal::prelude::ToPrimitive;
+    (value * factor)
+        .round()
+        .to_u64()
+        .ok_or(MoneroHelperError::InvalidAmount(amount.to_string()))
 }
 
 fn validate_monero_address(address: &str) -> Result<(), MoneroHelperError> {

@@ -74,12 +74,12 @@ pub async fn create_invoice(
         .ok_or((StatusCode::UNAUTHORIZED, "Unauthorized".to_string()))?;
 
     // parse the requested amount
-    let amount_requested: f64 = invoice_request
+    let amount_requested: Decimal = invoice_request
         .amount
         .parse()
         .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid amount".to_string()))?;
 
-    if amount_requested <= 0.0 {
+    if amount_requested <= Decimal::ZERO {
         return Err((
             StatusCode::BAD_REQUEST,
             "Amount must be positive".to_string(),

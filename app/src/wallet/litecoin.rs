@@ -232,11 +232,18 @@ pub struct BuildAndSendResponse {
 }
 
 /// Convert LTC string to litoshis (smallest unit, 1 LTC = 100_000_000 litoshis).
+use rust_decimal::prelude::ToPrimitive;
+
+/// Convert LTC string to litoshis (smallest unit, 1 LTC = 100_000_000 litoshis).
 pub fn ltc_to_litoshi(amount: &str) -> Result<u64, LitecoinError> {
-    let value: f64 = amount
+    let value: rust_decimal::Decimal = amount
         .parse()
         .map_err(|_| LitecoinError::InvalidAmount(amount.to_string()))?;
-    Ok((value * 100_000_000.0) as u64)
+    let factor = rust_decimal::Decimal::new(100_000_000, 0);
+    (value * factor)
+        .round()
+        .to_u64()
+        .ok_or(LitecoinError::InvalidAmount(amount.to_string()))
 }
 
 /// Convert litoshis (smallest unit, 1 LTC = 100_000_000 litoshis) to LTC string.
