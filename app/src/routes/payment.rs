@@ -59,6 +59,8 @@ pub struct CreateInvoiceRequest {
 ///
 /// Returns an invoice UUID to check the specified payment amount.
 /// Provide either `amount` (crypto) or `fiat_amount` + `fiat_currency` (fiat), not both.
+///
+/// Authenticate with `X-API-Key` header (e.g. `-H 'X-API-Key: cwrp_live_...'`).
 #[utoipa::path(
     post,
     path = "/create_invoice",
