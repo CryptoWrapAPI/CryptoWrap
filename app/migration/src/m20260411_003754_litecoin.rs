@@ -39,6 +39,7 @@ impl MigrationTrait for Migration {
                     .col(integer("blockchain_height").not_null())
                     .col(boolean("is_available").default(true).null())
                     .col(boolean("is_change").default(false).not_null())
+                    .col(boolean("keep_track").default(false).not_null())
                     .col(string("initial_balance").null()) // is used to track before balance using as deposit - so it's possible to use /get_balance instead of requesting txs which simplifies logic a lot
                     .to_owned(),
             )

@@ -10,12 +10,17 @@ pub struct Model {
     pub currency: String,
     pub network: String,
     pub wallet_address: String,
+    pub owner_id: Uuid,
     pub amount_requested: String,
     pub amount_received: String,
     pub payment_status: String,
     pub confirmations: Option<i32>,
     #[sea_orm(column_type = "JsonBinary", nullable)]
     pub transactions: Option<Json>,
+    pub created_at: DateTime,
+    pub updated_at: Option<DateTime>,
+    pub finalized: bool,
+    pub notify_url: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
