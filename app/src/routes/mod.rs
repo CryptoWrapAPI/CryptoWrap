@@ -4,6 +4,7 @@ pub mod checkout;
 pub mod dashboard;
 pub mod dashboard_api;
 pub mod deposit;
+pub mod fiat;
 pub mod iframe_v1;
 pub mod notify_helper;
 pub mod payment;

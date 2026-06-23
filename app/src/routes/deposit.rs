@@ -1,7 +1,8 @@
 use crate::AppState;
 use crate::PAYMENT_TAG;
 use crate::entity::prelude::*;
-use crate::entity::{deposits, fiat_prices, litecoin_wallet, monero_wallet};
+use crate::entity::{deposits, litecoin_wallet, monero_wallet};
+use crate::routes::fiat::{convert_to_fiat, FiatCurrency};
 use crate::routes::auth_helper::extract_user_row;
 use crate::routes::notify_helper::notify_shop;
 use crate::wallet::litecoin::litoshi_to_ltc;
@@ -9,7 +10,6 @@ use crate::wallet::litecoin_helper;
 use crate::wallet::monero_helper::{self, DepositCheckResult};
 use axum::{Json, extract::Query, extract::State, http::HeaderMap, http::StatusCode};
 use chrono::Utc;
-use rust_decimal::Decimal;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
 use serde::{Deserialize, Serialize};
 use std::slice::from_ref;
@@ -520,95 +520,6 @@ pub enum Currency {
 pub enum Network {
     Monero,
     Litecoin,
-}
-
-#[derive(Serialize, Deserialize, ToSchema, Clone, Copy, Display)]
-#[serde(rename_all = "lowercase")]
-pub enum FiatCurrency {
-    Usd,
-    Eur,
-    Rub,
-}
-
-// impl FiatCurrency {
-//     pub fn as_str(&self) -> &'static str {
-//         match self {
-//             FiatCurrency::Usd => "usd",
-//             FiatCurrency::Eur => "eur",
-//             FiatCurrency::Rub => "rub",
-//         }
-//     }
-// }
-
-fn currency_to_coin_id(currency: &str) -> String {
-    match currency.to_uppercase().as_str() {
-        "XMR" => "monero".to_string(),
-        "LTC" => "litecoin".to_string(),
-        _ => currency.to_lowercase(), // will silently fail
-    }
-}
-
-pub struct FiatConversion {
-    pub amount: String,
-    pub currency: FiatCurrency,
-}
-
-pub async fn convert_to_fiat(
-    conn: &sea_orm::DatabaseConnection,
-    crypto_amount: &str,
-    coin: &str,
-    fiat_currency: FiatCurrency,
-) -> Option<FiatConversion> {
-    let crypto_amount: Decimal = crypto_amount.parse().ok()?;
-    let coin_id = currency_to_coin_id(coin);
-
-    let price = FiatPrices::find()
-        .filter(fiat_prices::Column::Coin.eq(&coin_id))
-        .one(conn)
-        .await
-        .ok()??;
-
-    let fiat_price = match fiat_currency {
-        FiatCurrency::Usd => price.usd,
-        FiatCurrency::Eur => price.eur,
-        FiatCurrency::Rub => price.rub,
-    };
-
-    let fiat_amount = crypto_amount * fiat_price;
-
-    Some(FiatConversion {
-        amount: fiat_amount.to_string(),
-        currency: fiat_currency,
-    })
-}
-
-pub async fn convert_from_fiat(
-    conn: &sea_orm::DatabaseConnection,
-    fiat_amount: Decimal,
-    coin: &str,
-    fiat_currency: FiatCurrency,
-) -> Result<Decimal, String> {
-    let coin_id = currency_to_coin_id(coin);
-
-    let price = FiatPrices::find()
-        .filter(fiat_prices::Column::Coin.eq(&coin_id))
-        .one(conn)
-        .await
-        .map_err(|e| format!("Database error: {}", e))?
-        .ok_or_else(|| format!("No price data found for coin: {}", coin_id))?;
-
-    let fiat_price = match fiat_currency {
-        FiatCurrency::Usd => price.usd,
-        FiatCurrency::Eur => price.eur,
-        FiatCurrency::Rub => price.rub,
-    };
-
-    if fiat_price <= Decimal::ZERO {
-        return Err("Fiat price is zero or negative".to_string());
-    }
-
-    let crypto_amount = fiat_amount / fiat_price;
-    Ok(crypto_amount)
 }
 
 #[derive(Deserialize, ToSchema)]
