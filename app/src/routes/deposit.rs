@@ -213,6 +213,7 @@ pub async fn check(
             deposit_uuid,
             wallet_address: deposit.wallet_address,
             amount_received: deposit.amount_received.clone(),
+            currency: deposit.currency.clone(),
             payment_status: DepositStatus::from_str(&deposit.payment_status),
             confirmations,
             txids,
@@ -386,6 +387,7 @@ pub async fn check(
         deposit_uuid,
         wallet_address,
         amount_received: amount_received.clone(),
+        currency: deposit.currency.clone(),
         payment_status: payment_status.clone(),
         confirmations: confirmations.map(|c| c as u32),
         txids,
@@ -468,12 +470,14 @@ impl DepositStatus {
     // "txids":Option::<String>::None,
     "txids":"[]", // just for example matter
     "is_finalized":false,
+    "currency":"XMR",
 }))]
 pub struct CheckDepositResponse {
     #[schema(value_type = String)]
     pub deposit_uuid: Uuid,
     pub wallet_address: String,
     pub amount_received: String,
+    pub currency: String,
     pub payment_status: DepositStatus,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub confirmations: Option<u32>,

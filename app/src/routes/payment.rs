@@ -26,6 +26,7 @@ use uuid::Uuid;
     "wallet_address":"46QYvqx4Z8JKk26DVyNbFjMgFqXyrXgAb3W8kEHBiSN78XrcoPRHk4ATjoCJ9eia5MVQMxDdQ6nAaa2D9MgLgZV31V2bCRS",
     "amount_requested":"1.5",
     "currency":"XMR",
+    "iframe_url":"https://example.com/iframe/v1?invoice_uuid=3f270a5a-50be-4ad7-9f01-fffc2c5144b3",
 }))]
 pub struct CreateInvoiceResponse {
     #[schema(value_type = String)]
@@ -33,6 +34,7 @@ pub struct CreateInvoiceResponse {
     pub wallet_address: String,
     pub amount_requested: String,
     pub currency: Currency,
+    pub iframe_url: String,
 }
 
 #[derive(Deserialize, ToSchema)]
@@ -172,11 +174,17 @@ pub async fn create_invoice(
     let invoice = invoice.insert(&state.conn).await.unwrap();
     let invoice_uuid = invoice.invoice_id;
 
+    let iframe_url = format!(
+        "{0}/iframe/v1?invoice_uuid={invoice_uuid}",
+        &state.current_url
+    );
+
     Ok(Json(CreateInvoiceResponse {
         invoice_uuid,
         wallet_address,
         amount_requested: amount_requested.to_string(),
         currency: invoice_request.currency,
+        iframe_url,
     }))
 }
 
@@ -223,6 +231,7 @@ impl PaymentStatus {
     "wallet_address":"46QYvqx4Z8JKk26DVyNbFjMgFqXyrXgAb3W8kEHBiSN78XrcoPRHk4ATjoCJ9eia5MVQMxDdQ6nAaa2D9MgLgZV31V2bCRS",
     "amount_requested":"1.5",
     "amount_received":"0",
+    "currency":"XMR",
     "payment_status":"waiting",
     "confirmations":null,
     "transactions":[],
@@ -234,6 +243,7 @@ pub struct CheckInvoiceResponse {
     pub wallet_address: String,
     pub amount_requested: String,
     pub amount_received: String,
+    pub currency: String,
     pub payment_status: PaymentStatus,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub confirmations: Option<u32>,
@@ -295,6 +305,7 @@ pub async fn check_invoice(
             wallet_address: invoice.wallet_address,
             amount_requested: invoice.amount_requested,
             amount_received: invoice.amount_received,
+            currency: invoice.currency.clone(),
             payment_status: PaymentStatus::from_str(&invoice.payment_status),
             confirmations: invoice.confirmations.map(|c| c as u32),
             transactions,
@@ -477,6 +488,7 @@ pub async fn check_invoice(
         wallet_address,
         amount_requested: invoice.amount_requested,
         amount_received,
+        currency: invoice.currency,
         payment_status: payment_status.clone(),
         confirmations: confirmations.map(|c| c as u32),
         transactions: txids,

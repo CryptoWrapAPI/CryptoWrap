@@ -224,34 +224,57 @@
       transform: translateX(-50%) translateY(0);
       opacity: 1;
     }
+
+    .loading-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding-top: 4rem;
+    }
+
+    .payment-content {
+      display: none;
+    }
+
+    .payment-content.ready {
+      display: block;
+    }
   </style>
 </head>
 
 <body>
 
   <div class="body-inner">
-
-    <div>
-      <div class="qr-wrap" id="qr-wrap"></div>
+    <div class="loading-screen" id="loading-screen">
+      <div class="spinner"></div>
+      <div style="color:#666;font-size:0.88rem;">Loading payment...</div>
     </div>
 
-    <div class="amount" id="amount-display">0.00 <span id="currency-display"></span></div>
-    <button class="copy-btn" id="copy-amount-btn">Copy Amount</button>
+    <div class="payment-content" id="payment-content">
 
-    <div class="address-box">
-      <div id="address-display"></div>
+      <div>
+        <div class="qr-wrap" id="qr-wrap"></div>
+      </div>
+
+      <div class="amount"><span id="amount-text"></span> <span id="currency-code"></span></div>
+      <button class="copy-btn" id="copy-amount-btn">Copy Amount</button>
+
+      <div class="address-box">
+        <div id="address-display"></div>
+      </div>
+      <button class="copy-btn" id="copy-btn">Copy Address</button>
+
+      <div class="status">
+        <span class="spinner" id="spinner"></span>
+        <span id="status-text">Waiting for payment...</span>
+      </div>
+
+      <div class="success-msg" id="success-msg">Payment received!</div>
+
+      <button class="check-btn" id="check-btn">Check Now</button>
+      <div class="muted" id="invoice-ref"></div>
     </div>
-    <button class="copy-btn" id="copy-btn">Copy Address</button>
-
-    <div class="status">
-      <span class="spinner" id="spinner"></span>
-      <span id="status-text">Loading...</span>
-    </div>
-
-    <div class="success-msg" id="success-msg">Payment received!</div>
-
-    <button class="check-btn" id="check-btn">Check Now</button>
-    <div class="muted" id="invoice-ref"></div>
   </div>
 
   <div class="toast" id="toast">Copied!</div>
@@ -264,6 +287,8 @@
     let timerInterval;
 
     const $ = (id) => document.getElementById(id);
+    const loadingScreen = $('loading-screen');
+    const paymentContent = $('payment-content');
     const spinner = $('spinner');
     const statusText = $('status-text');
     const successMsg = $('success-msg');
@@ -271,8 +296,8 @@
     const checkBtn = $('check-btn');
     const qrWrap = $('qr-wrap');
     const addressDisplay = $('address-display');
-    const amountDisplay = $('amount-display');
-    const currencyDisplay = $('currency-display');
+    const amountText = $('amount-text');
+    const currencyCode = $('currency-code');
 
     let currentData = null;
 
@@ -296,24 +321,25 @@
     function updateUI(data) {
       currentData = data;
 
-      if (!addressDisplay.textContent) {
-        // first load — set everything
+      if (!paymentContent.classList.contains('ready')) {
+        // first load — populate all fields, then show content
         addressDisplay.textContent = data.wallet_address;
-        const amt = parseFloat(data.amount_requested).toFixed(data.amount_requested.includes('.') ? (data.amount_requested.split('.')[1]?.length || 2) : 2);
-        amountDisplay.innerHTML = `${amt} <span>${data.payment_status === 'confirmed' ? data.amount_received : data.amount_requested}</span>`;
-        currencyDisplay.textContent = data.currency;
+        amountText.textContent = data.amount_requested;
+        currencyCode.textContent = data.currency;
 
         // QR code
         const qrImg = document.createElement('img');
         qrImg.src = `/api/v1/qr?size=140x140&data=${encodeURIComponent(data.wallet_address)}`;
         qrImg.alt = 'Payment QR Code';
-        qrWrap.innerHTML = '';
         qrWrap.appendChild(qrImg);
 
-        // Copy amount: copy the requested amount
-        $('copy-amount-btn').onclick = () => {
+        // Copy amount copies the requested amount
+        $('copy-amount-btn').onclick = (e) => {
           navigator.clipboard.writeText(data.amount_requested).then(() => showToast('Amount copied!'));
         };
+
+        loadingScreen.style.display = 'none';
+        paymentContent.classList.add('ready');
       }
 
       setStatus(data.payment_status);
