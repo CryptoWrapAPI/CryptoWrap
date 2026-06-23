@@ -2,6 +2,7 @@ use crate::entity::prelude::*;
 use crate::entity::monero_wallet::{self, ActiveModel as MoneroWalletActiveModel};
 use crate::entity::tokens::{self, ActiveModel as TokensActiveModel};
 use crate::wallet::monero::{self, MoneroError, MoneroRpc};
+use rust_decimal::prelude::ToPrimitive;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter, Result as FmtResult};
@@ -26,7 +27,6 @@ pub fn xmr_to_piconero(amount: &str) -> Result<u64, MoneroHelperError> {
         .parse()
         .map_err(|_| MoneroHelperError::InvalidAmount(amount.to_string()))?;
     let factor = rust_decimal::Decimal::new(1_000_000_000_000, 0);
-    use rust_decimal::prelude::ToPrimitive;
     (value * factor)
         .round()
         .to_u64()

@@ -1,4 +1,5 @@
 use reqwest::Client;
+use rust_decimal::prelude::ToPrimitive;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use thiserror::Error;
@@ -230,9 +231,6 @@ pub struct BuildAndSendRequest {
 pub struct BuildAndSendResponse {
     pub tx_hash: String,
 }
-
-/// Convert LTC string to litoshis (smallest unit, 1 LTC = 100_000_000 litoshis).
-use rust_decimal::prelude::ToPrimitive;
 
 /// Convert LTC string to litoshis (smallest unit, 1 LTC = 100_000_000 litoshis).
 pub fn ltc_to_litoshi(amount: &str) -> Result<u64, LitecoinError> {
