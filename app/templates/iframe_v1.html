@@ -345,6 +345,34 @@
       setTimeout(() => toast.classList.remove('show'), 2000);
     }
 
+    function copyText(text, label) {
+      const doCopy = () => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try {
+          document.execCommand('copy');
+          showToast(label + ' copied!');
+        } catch (_) {
+          showToast('Could not copy ' + label.toLowerCase());
+        }
+        document.body.removeChild(ta);
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(
+          () => showToast(label + ' copied!')
+        ).catch(() => doCopy());
+      } else {
+        doCopy();
+      }
+    }
+
     function setStatus(status) {
       spinner.className = 'spinner' + (status === 'confirmed' ? ' done' : '');
       const labels = {waiting: 'Waiting for payment...', detected: 'Payment detected!', confirmed: 'Payment confirmed!', expired: 'Payment expired'};
@@ -373,7 +401,7 @@
 
         // Copy amount copies the requested amount
         $('copy-amount-btn').onclick = (e) => {
-          navigator.clipboard.writeText(data.amount_requested).then(() => showToast('Amount copied!'));
+          copyText(data.amount_requested, 'Amount');
         };
 
         loadingScreen.style.display = 'none';
@@ -416,7 +444,7 @@
       // Copy address
       $('copy-btn').addEventListener('click', () => {
         if (currentData) {
-          navigator.clipboard.writeText(currentData.wallet_address).then(() => showToast('Address copied!'));
+          copyText(currentData.wallet_address, 'Address');
         }
       });
 
