@@ -4,7 +4,7 @@ use crate::entity::invoices;
 use crate::entity::prelude::*;
 use crate::entity::{litecoin_wallet, monero_wallet};
 use crate::routes::auth_helper::extract_user_row;
-use crate::routes::deposit::{Currency, FiatCurrency, Network, convert_to_fiat};
+use crate::routes::deposit::{Currency, FiatCurrency, Network, convert_from_fiat, convert_to_fiat};
 use crate::routes::notify_helper::notify_shop;
 use crate::wallet::litecoin::litoshi_to_ltc;
 use crate::wallet::litecoin_helper;
@@ -39,12 +39,17 @@ pub struct CreateInvoiceResponse {
 
 #[derive(Deserialize, ToSchema)]
 #[schema(example = json!({
-    "amount":"1.5",
-    "currency":"XMR",
-    "wallet_address":"46QYvqx4Z8JKk26DVyNbFjMgFqXyrXgAb3W8kEHBiSN78XrcoPRHk4ATjoCJ9eia5MVQMxDdQ6nAaa2D9MgLgZV31V2bCRS",
+    "fiat_amount": "50.00",
+    "fiat_currency": "usd",
+    "currency": "XMR",
 }))]
 pub struct CreateInvoiceRequest {
-    pub amount: String,
+    /// Exact crypto amount requested (e.g., "0.15"). Mutually exclusive with fiat_amount.
+    pub amount: Option<String>,
+    /// Target fiat value to convert (e.g., "50.00"). Requires fiat_currency.
+    pub fiat_amount: Option<String>,
+    /// The fiat currency for input valuation (e.g., "usd", "eur", "rub").
+    pub fiat_currency: Option<FiatCurrency>,
     pub currency: Currency,
     pub network: Option<Network>,
     pub notify_url: Option<String>,
@@ -53,6 +58,7 @@ pub struct CreateInvoiceRequest {
 /// Create an invoice
 ///
 /// Returns an invoice UUID to check the specified payment amount.
+/// Provide either `amount` (crypto) or `fiat_amount` + `fiat_currency` (fiat), not both.
 #[utoipa::path(
     post,
     path = "/create_invoice",
@@ -60,6 +66,7 @@ pub struct CreateInvoiceRequest {
     security(("api_key" = [])),
     responses(
         (status = 200, description = "Invoice created successfully", body = CreateInvoiceResponse),
+        (status = 400, description = "Invalid or missing amount, or ambiguous request"),
         (status = 401, description = "Token is missing or invalid"),
         (status = 500, description = "Internal server error", body = String),
     )
@@ -73,18 +80,70 @@ pub async fn create_invoice(
         .await
         .ok_or((StatusCode::UNAUTHORIZED, "Unauthorized".to_string()))?;
 
-    // parse the requested amount
-    let amount_requested: Decimal = invoice_request
-        .amount
-        .parse()
-        .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid amount".to_string()))?;
+    // Evaluate mutually exclusive inputs using pattern matching
+    let amount_requested: Decimal = match (
+        &invoice_request.amount,
+        &invoice_request.fiat_amount,
+        &invoice_request.fiat_currency,
+    ) {
+        // Case 1: Pure crypto invoice
+        (Some(crypto_str), None, None) => {
+            let amt: Decimal = crypto_str
+                .parse()
+                .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid crypto amount".to_string()))?;
+            if amt <= Decimal::ZERO {
+                return Err((StatusCode::BAD_REQUEST, "Amount must be positive".to_string()));
+            }
+            amt
+        }
 
-    if amount_requested <= Decimal::ZERO {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "Amount must be positive".to_string(),
-        ));
-    }
+        // Case 2: Fiat-denominated invoice (calculate crypto dynamically)
+        (None, Some(fiat_str), Some(fiat_curr)) => {
+            let fiat_amt: Decimal = fiat_str
+                .parse()
+                .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid fiat amount".to_string()))?;
+            if fiat_amt <= Decimal::ZERO {
+                return Err((StatusCode::BAD_REQUEST, "Fiat amount must be positive".to_string()));
+            }
+
+            let coin = invoice_request.currency.to_string().to_lowercase();
+            convert_from_fiat(&state.conn, fiat_amt, &coin, fiat_curr.clone())
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Pricing error: {}", e)))?
+        }
+
+        // Case 3: Invalid - both specified
+        (Some(_), Some(_), _) => {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Ambiguous request. Provide either 'amount' OR 'fiat_amount', not both.".to_string(),
+            ));
+        }
+
+        // Case 4: Invalid - neither specified
+        (None, None, _) => {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Missing payment value. You must provide either 'amount' or 'fiat_amount'.".to_string(),
+            ));
+        }
+
+        // Case 5: Missing fiat_currency when fiat_amount is present
+        (None, Some(_), None) => {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Missing currency context. 'fiat_currency' is required when 'fiat_amount' is provided.".to_string(),
+            ));
+        }
+
+        // Case 6: amount + fiat_currency without fiat_amount — ambiguous
+        (Some(_), None, Some(_)) => {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Ambiguous request. 'fiat_currency' is present but 'fiat_amount' is missing. Provide 'fiat_amount' or remove 'fiat_currency'.".to_string(),
+            ));
+        }
+    };
 
     // determine network
     let network = if let Some(net) = invoice_request.network {

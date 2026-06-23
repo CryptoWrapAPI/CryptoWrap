@@ -582,6 +582,35 @@ pub async fn convert_to_fiat(
     })
 }
 
+pub async fn convert_from_fiat(
+    conn: &sea_orm::DatabaseConnection,
+    fiat_amount: Decimal,
+    coin: &str,
+    fiat_currency: FiatCurrency,
+) -> Result<Decimal, String> {
+    let coin_id = currency_to_coin_id(coin);
+
+    let price = FiatPrices::find()
+        .filter(fiat_prices::Column::Coin.eq(&coin_id))
+        .one(conn)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?
+        .ok_or_else(|| format!("No price data found for coin: {}", coin_id))?;
+
+    let fiat_price = match fiat_currency {
+        FiatCurrency::Usd => price.usd,
+        FiatCurrency::Eur => price.eur,
+        FiatCurrency::Rub => price.rub,
+    };
+
+    if fiat_price <= Decimal::ZERO {
+        return Err("Fiat price is zero or negative".to_string());
+    }
+
+    let crypto_amount = fiat_amount / fiat_price;
+    Ok(crypto_amount)
+}
+
 #[derive(Deserialize, ToSchema)]
 #[schema(example = json!({
     "currency":"XMR",
