@@ -133,7 +133,7 @@ async fn main() -> Result<(), Error> {
         .with_state(state.clone())
         .split_for_parts();
 
-    let static_files = ServeDir::new("./assets");
+    let static_files = ServeDir::new("./static");
 
     let router = dashboard::router(state.clone())
         .merge(dashboard_api::router(state.clone()))
