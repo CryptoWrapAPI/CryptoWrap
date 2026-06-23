@@ -323,6 +323,8 @@ pub struct CheckInvoiceResponse {
 /// Check invoice
 ///
 /// Returns invoice payment status.
+///
+/// Authenticate with `X-API-Key` header (e.g. `-H 'X-API-Key: cwrp_live_...'`).
 #[utoipa::path(
     get,
     path = "/check_invoice",
