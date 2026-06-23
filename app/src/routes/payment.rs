@@ -189,6 +189,9 @@ pub async fn create_invoice(
 }
 
 #[derive(Deserialize, ToSchema)]
+#[schema(example = json!({
+    "invoice_uuid":"3f270a5a-50be-4ad7-9f01-fffc2c5144b3",
+}))]
 pub struct CheckInvoiceRequest {
     #[schema(value_type = String)]
     pub invoice_uuid: Uuid,

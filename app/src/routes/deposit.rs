@@ -422,6 +422,9 @@ pub fn router() -> OpenApiRouter<AppState> {
 // txid = transaction id (e.g. transaction identificator or hash from blockchain) /
 
 #[derive(Deserialize, ToSchema)]
+#[schema(example = json!({
+    "deposit_uuid":"3f270a5a-50be-4ad7-9f01-fffc2c5144b3",
+}))]
 pub struct CheckDepositRequest {
     #[schema(value_type = String)]
     pub deposit_uuid: Uuid,
