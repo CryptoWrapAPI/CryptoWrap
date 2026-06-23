@@ -3,6 +3,7 @@ use dotenvy::dotenv;
 use routes::auth;
 use routes::checkout;
 use routes::dashboard;
+use routes::iframe_v1;
 use routes::dashboard_api;
 use routes::deposit;
 use routes::qr;
@@ -138,6 +139,7 @@ async fn main() -> Result<(), Error> {
     let router = dashboard::router(state.clone())
         .merge(dashboard_api::router(state.clone()))
         .merge(checkout::router())
+        .merge(iframe_v1::router())
         .merge(qr::router())
         .merge(withdraw::router(state))
         .merge(api_router)
