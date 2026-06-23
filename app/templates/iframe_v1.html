@@ -180,18 +180,23 @@
     .check-btn.hidden {
       display: none;
     }
+
     .check-btn .spin-sm {
       display: inline-block;
       width: 14px;
       height: 14px;
-      border: 2px solid rgba(255,255,255,0.15);
+      border: 2px solid rgba(255, 255, 255, 0.15);
       border-top-color: #e0e0e0;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
       vertical-align: middle;
       margin-right: 0.4rem;
     }
-    .check-btn.loading { pointer-events: none; opacity: 0.6; }
+
+    .check-btn.loading {
+      pointer-events: none;
+      opacity: 0.6;
+    }
 
     .muted {
       color: #555;
@@ -247,8 +252,6 @@
 
     <button class="check-btn" id="check-btn">Check Now</button>
 
-    <div class="muted" id="timer-text">Auto-refreshing in 5s</div>
-
   </div>
 
   <div class="toast" id="toast">Copied!</div>
@@ -269,7 +272,6 @@
     const spinner = $('spinner');
     const statusText = $('status-text');
     const successMsg = $('success-msg');
-    const timerText = $('timer-text');
     const toast = $('toast');
     const checkBtn = $('check-btn');
     const qrWrap = $('qr-wrap');
@@ -287,7 +289,6 @@
       statusText.textContent = labels[status] || status;
       if (status === 'confirmed') {
         successMsg.style.display = 'block';
-        timerText.textContent = 'Payment complete';
         checkBtn.classList.add('hidden');
         if (timerInterval) clearInterval(timerInterval);
       }
@@ -298,13 +299,6 @@
       setStatus(MOCK.statuses[step]);
       step++;
     }
-
-    let countdown = 5;
-    timerInterval = setInterval(() => {
-      countdown--;
-      if (countdown <= 0) {countdown = 5; advanceMockStatus();}
-      timerText.textContent = countdown > 0 ? `Auto-refreshing in ${countdown}s` : 'Checking...';
-    }, 1000);
 
     // QR code
     const qrImg = document.createElement('img');
