@@ -240,6 +240,37 @@
     .payment-content.ready {
       display: block;
     }
+
+    .error-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding-top: 4rem;
+    }
+
+    .error-screen.visible {
+      display: flex;
+    }
+
+    .error-screen .error-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(255, 80, 80, 0.15);
+      color: #ff5050;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .error-screen .error-msg {
+      color: #888;
+      font-size: 0.88rem;
+      text-align: center;
+    }
   </style>
 </head>
 
@@ -249,6 +280,11 @@
     <div class="loading-screen" id="loading-screen">
       <div class="spinner"></div>
       <div style="color:#666;font-size:0.88rem;">Loading payment...</div>
+    </div>
+
+    <div class="error-screen" id="error-screen">
+      <div class="error-icon">!</div>
+      <div class="error-msg" id="error-msg">Payment not found.</div>
     </div>
 
     <div class="payment-content" id="payment-content">
@@ -288,6 +324,8 @@
 
     const $ = (id) => document.getElementById(id);
     const loadingScreen = $('loading-screen');
+    const errorScreen = $('error-screen');
+    const errorMsg = $('error-msg');
     const paymentContent = $('payment-content');
     const spinner = $('spinner');
     const statusText = $('status-text');
@@ -345,70 +383,84 @@
       setStatus(data.payment_status);
     }
 
+    function showError(msg) {
+      loadingScreen.style.display = 'none';
+      errorMsg.textContent = msg;
+      errorScreen.classList.add('visible');
+      if (timerInterval) clearInterval(timerInterval);
+    }
+
     async function checkStatus() {
       checkBtn.classList.add('loading');
       checkBtn.innerHTML = '<span class="spin-sm"></span> Checking...';
       try {
         const resp = await fetch(CHECK_URL);
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        if (!resp.ok) {
+          if (resp.status === 404) throw new Error('Invoice not found');
+          throw new Error('Error loading payment');
+        }
         const data = await resp.json();
         updateUI(data);
       } catch (e) {
-        statusText.textContent = 'Error checking payment';
+        showError(e.message);
       } finally {
         checkBtn.classList.remove('loading');
         checkBtn.innerHTML = 'Check Now';
       }
     }
 
-    // Copy address
-    $('copy-btn').addEventListener('click', () => {
-      if (currentData) {
-        navigator.clipboard.writeText(currentData.wallet_address).then(() => showToast('Address copied!'));
-      }
-    });
+    // Initialise
+    if (!INVOICE_UUID) {
+      showError('Missing invoice ID.');
+    } else {
+      // Copy address
+      $('copy-btn').addEventListener('click', () => {
+        if (currentData) {
+          navigator.clipboard.writeText(currentData.wallet_address).then(() => showToast('Address copied!'));
+        }
+      });
 
-    // QR zoom toggle
-    qrWrap.addEventListener('click', () => {
-      if (zoomed) {
-        const overlay = document.querySelector('.qr-overlay');
-        if (overlay) overlay.remove();
-        zoomed = false;
-      } else {
-        if (!currentData) return;
-        const overlay = document.createElement('div');
-        overlay.className = 'qr-overlay';
-        const bigImg = document.createElement('img');
-        bigImg.src = `/api/v1/qr?size=400x400&data=${encodeURIComponent(currentData.wallet_address)}`;
-        bigImg.alt = 'Payment QR Code';
-        overlay.appendChild(bigImg);
-        overlay.addEventListener('click', () => {
-          overlay.remove();
+      // QR zoom toggle
+      qrWrap.addEventListener('click', () => {
+        if (zoomed) {
+          const overlay = document.querySelector('.qr-overlay');
+          if (overlay) overlay.remove();
           zoomed = false;
-        });
-        document.body.appendChild(overlay);
-        zoomed = true;
-      }
-    });
+        } else {
+          if (!currentData) return;
+          const overlay = document.createElement('div');
+          overlay.className = 'qr-overlay';
+          const bigImg = document.createElement('img');
+          bigImg.src = `/api/v1/qr?size=400x400&data=${encodeURIComponent(currentData.wallet_address)}`;
+          bigImg.alt = 'Payment QR Code';
+          overlay.appendChild(bigImg);
+          overlay.addEventListener('click', () => {
+            overlay.remove();
+            zoomed = false;
+          });
+          document.body.appendChild(overlay);
+          zoomed = true;
+        }
+      });
 
-    // Check now
-    checkBtn.addEventListener('click', checkStatus);
+      // Check now
+      checkBtn.addEventListener('click', checkStatus);
 
-    // Auto-poll on load
-    checkStatus();
+      // Auto-poll on load
+      checkStatus();
 
-    // Auto-poll every 10 seconds
-    timerInterval = setInterval(() => {
-      if (currentData && currentData.payment_status === 'confirmed') {
-        clearInterval(timerInterval);
-        return;
-      }
-      // silent background check without UI spinner
-      fetch(CHECK_URL)
-        .then(r => r.ok ? r.json() : null)
-        .then(data => { if (data) updateUI(data); })
-        .catch(() => {});
-    }, 10000);
+      // Auto-poll every 10 seconds
+      timerInterval = setInterval(() => {
+        if (currentData && currentData.payment_status === 'confirmed') {
+          clearInterval(timerInterval);
+          return;
+        }
+        fetch(CHECK_URL)
+          .then(r => r.ok ? r.json() : null)
+          .then(data => { if (data) updateUI(data); })
+          .catch(() => {});
+      }, 10000);
+    }
   </script>
 </body>
 
