@@ -13,6 +13,7 @@ use uuid::Uuid;
 use crate::AppState;
 use crate::entity::prelude::*;
 use crate::entity::deposits;
+use crate::entity::invoices;
 use axum::extract::State;
 use sea_orm::{ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter};
 
@@ -23,6 +24,8 @@ struct DashboardTemplate {
     member_since: String,
     deposit_requests_count: String,
     successful_deposits_count: String,
+    invoices_created_count: String,
+    invoices_paid_count: String,
 }
 
 // async fn dashboard(cookies: Cookies) -> Response {
@@ -113,6 +116,20 @@ async fn dashboard(state: State<AppState>, jar: PrivateCookieJar) -> (PrivateCoo
         .unwrap_or(0)
         .to_string();
 
+    let invoices_created_count = Invoices::find()
+        .filter(invoices::Column::OwnerId.eq(user_token_entry.id))
+        .count(&state.conn)
+        .await
+        .unwrap_or(0)
+        .to_string();
+    let invoices_paid_count = Invoices::find()
+        .filter(invoices::Column::OwnerId.eq(user_token_entry.id))
+        .filter(invoices::Column::PaymentStatus.eq("confirmed"))
+        .count(&state.conn)
+        .await
+        .unwrap_or(0)
+        .to_string();
+
     (
         jar,
         DashboardTemplate {
@@ -120,6 +137,8 @@ async fn dashboard(state: State<AppState>, jar: PrivateCookieJar) -> (PrivateCoo
             member_since,
             deposit_requests_count,
             successful_deposits_count,
+            invoices_created_count,
+            invoices_paid_count,
         }
         .into_response(),
     )

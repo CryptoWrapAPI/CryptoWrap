@@ -27,12 +27,11 @@
         <div class="dashboard-content">
             <!-- Account Info Section with Usage Statistics -->
             <section class="section account-info">
-                <h2>Account Overview</h2>
+                <div class="account-header">
+                    <h2>Account Overview</h2>
+                    <p class="member-since">Member since {{ member_since }}</p>
+                </div>
                 <div class="info-grid">
-                    <div class="info-card">
-                        <p class="info-label">Member Since</p>
-                        <p class="info-value">{{ member_since }}</p>
-                    </div>
                     <div class="info-card">
                         <p class="info-label">Deposit Requests</p>
                         <p class="info-value">{{ deposit_requests_count }}</p>
@@ -40,6 +39,14 @@
                     <div class="info-card">
                         <p class="info-label">Successful Deposits</p>
                         <p class="info-value">{{ successful_deposits_count }}</p>
+                    </div>
+                    <div class="info-card">
+                        <p class="info-label">Created Invoices</p>
+                        <p class="info-value">{{ invoices_created_count }}</p>
+                    </div>
+                    <div class="info-card">
+                        <p class="info-label">Paid Invoices</p>
+                        <p class="info-value">{{ invoices_paid_count }}</p>
                     </div>
                 </div>
             </section>

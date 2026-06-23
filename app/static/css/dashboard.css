@@ -107,6 +107,22 @@ body {
     color: #6a96ff;
 }
 
+.account-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+.account-header h2 {
+    margin-bottom: 0;
+}
+
+.member-since {
+    font-size: 0.85rem;
+    color: #888;
+}
+
 /* Account Info Section */
 .info-grid {
     display: grid;
