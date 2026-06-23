@@ -1,78 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment - CryptoWrap</title>
-    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="/assets/css/checkout.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment - CryptoWrap</title>
+  <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/css/checkout.css">
 </head>
+
 <body>
-    <div class="checkout-container">
-        <main class="checkout-content">
-            <div class="payment-card">
-                <div class="qr-section">
-                    <div class="qr-container" id="qr-container">
-                        <img src="" alt="Payment QR Code" id="qr-image">
-                    </div>
-                    <p class="qr-hint">Click to enlarge</p>
-                </div>
-
-                <div class="address-section">
-                    <span class="address-label">Payment Address</span>
-                    <div class="address-row">
-                        <input type="text" value="" readonly id="wallet-address" class="address-input">
-                        <button class="copy-btn" id="copy-btn">
-                            <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                            </svg>
-                            <span id="copy-text">Copy</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="status-section">
-                    <div class="status-indicator" id="status-indicator">
-                        <div class="status-dot waiting"></div>
-                        <span class="status-text" id="status-text">Loading...</span>
-                    </div>
-                    <div class="status-details">
-                        <span class="detail-label">Received:</span>
-                        <span class="detail-value" id="amount-received">---</span>
-                    </div>
-                </div>
-
-                <button class="check-btn" id="check-btn" style="display: none;">
-                    <svg class="refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M23 4v6h-6"></path>
-                        <path d="M1 20v-6h6"></path>
-                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                    </svg>
-                    Check Status
-                </button>
-
-                <div class="success-section" id="success-section" style="display: none;">
-                    <p class="success-message">Payment received! You can return to the shop.</p>
-                    <a href="" class="return-btn" id="return-btn" style="display: none;">Return to Shop</a>
-                </div>
-            </div>
-        </main>
-
-        <footer class="checkout-footer">
-            <p>Deposit ID: <span class="mono" id="deposit-id">---</span></p>
-        </footer>
-    </div>
-
-    <div class="qr-modal" id="qr-modal">
-        <div class="qr-modal-content">
-            <button class="qr-modal-close" id="qr-modal-close">&times;</button>
-            <img src="" alt="Payment QR Code" id="qr-modal-image">
+  <div class="checkout-container">
+    <main class="checkout-content">
+      <div class="payment-card">
+        <div class="qr-section">
+          <div class="qr-container" id="qr-container">
+            <img src="" alt="Payment QR Code" id="qr-image">
+          </div>
+          <p class="qr-hint">Click to enlarge</p>
         </div>
+
+        <div class="address-section">
+          <span class="address-label">Payment Address</span>
+          <div class="address-row">
+            <input type="text" value="" readonly id="wallet-address" class="address-input">
+            <button class="copy-btn" id="copy-btn">
+              <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span id="copy-text">Copy</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="status-section">
+          <div class="status-indicator" id="status-indicator">
+            <div class="status-dot waiting"></div>
+            <span class="status-text" id="status-text">Loading...</span>
+          </div>
+          <div class="status-details">
+            <span class="detail-label">Received:</span>
+            <span class="detail-value" id="amount-received">---</span>
+          </div>
+        </div>
+
+        <button class="check-btn" id="check-btn" style="display: none;">
+          <svg class="refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 4v6h-6"></path>
+            <path d="M1 20v-6h6"></path>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          Check Status
+        </button>
+
+        <div class="success-section" id="success-section" style="display: none;">
+          <p class="success-message">Payment received! Thank you.</p>
+          <a href="" class="return-btn" id="return-btn" style="display: none;">Return to Shop</a>
+        </div>
+      </div>
+    </main>
+
+    <footer class="checkout-footer">
+      <p>Deposit ID: <span class="mono" id="deposit-id">---</span></p>
+    </footer>
+  </div>
+
+  <div class="qr-modal" id="qr-modal">
+    <div class="qr-modal-content">
+      <button class="qr-modal-close" id="qr-modal-close">&times;</button>
+      <img src="" alt="Payment QR Code" id="qr-modal-image">
     </div>
+  </div>
 
-    <div class="toast" id="toast">Address copied!</div>
+  <div class="toast" id="toast">Address copied!</div>
 
-    <script src="/assets/js/checkout.js"></script>
+  <script src="/assets/js/checkout.js"></script>
 </body>
+
 </html>
