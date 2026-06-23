@@ -3,12 +3,12 @@ use crate::PAYMENT_TAG;
 use crate::entity::prelude::*;
 use crate::entity::{deposits, fiat_prices, litecoin_wallet, monero_wallet};
 use crate::routes::auth_helper::extract_user_row;
+use crate::routes::notify_helper::notify_shop;
 use crate::wallet::litecoin::litoshi_to_ltc;
 use crate::wallet::litecoin_helper;
 use crate::wallet::monero_helper::{self, DepositCheckResult};
 use axum::{Json, extract::Query, extract::State, http::HeaderMap, http::StatusCode};
 use chrono::Utc;
-use reqwest::Client;
 use rust_decimal::Decimal;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
 use serde::{Deserialize, Serialize};
@@ -411,44 +411,6 @@ pub async fn check(
     };
 
     Ok(Json(deposit_checked))
-}
-
-async fn notify_shop(
-    notify_url: &str,
-    deposit_checked: &CheckDepositResponse,
-) -> Result<(), String> {
-    // let client = Client::new();
-    let client = Client::builder()
-        .danger_accept_invalid_certs(true)
-        .build()
-        .unwrap();
-    // .map_err(|e| e.to_string())?;
-
-    let max_retries = 3;
-
-    for attempt in 1..=max_retries {
-        let response = client
-            .post(notify_url)
-            .timeout(tokio::time::Duration::from_secs(5))
-            .json(deposit_checked)
-            .send()
-            .await
-            .map_err(|e| e.to_string())?;
-        // potential issue: can convert POST to GET if redirected (for example, from http to https)
-
-        if response.status() == StatusCode::ACCEPTED {
-            return Ok(());
-        }
-
-        if attempt < max_retries {
-            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-        }
-    }
-
-    Err(format!(
-        "Failed to notify shop after {} attempts",
-        max_retries
-    ))
 }
 
 pub fn router() -> OpenApiRouter<AppState> {

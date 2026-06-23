@@ -235,38 +235,33 @@
       <div class="qr-wrap" id="qr-wrap"></div>
     </div>
 
-    <div class="amount">0.0085 <span>LTC</span></div>
+    <div class="amount" id="amount-display">0.00 <span id="currency-display"></span></div>
     <button class="copy-btn" id="copy-amount-btn">Copy Amount</button>
 
     <div class="address-box">
-      <div id="address-display">ltc1qmock7address7for7demo7purposes7xyz</div>
+      <div id="address-display"></div>
     </div>
     <button class="copy-btn" id="copy-btn">Copy Address</button>
 
     <div class="status">
       <span class="spinner" id="spinner"></span>
-      <span id="status-text">Waiting for payment...</span>
+      <span id="status-text">Loading...</span>
     </div>
 
     <div class="success-msg" id="success-msg">Payment received!</div>
 
     <button class="check-btn" id="check-btn">Check Now</button>
-
+    <div class="muted" id="invoice-ref"></div>
   </div>
 
   <div class="toast" id="toast">Copied!</div>
 
   <script>
-    const MOCK = {
-      address: 'ltc1qmock7address7for7demo7purposes7xyz',
-      amount: '0.0085',
-      currency: 'LTC',
-      statuses: ['waiting', 'waiting', 'waiting', 'detected', 'detected', 'confirmed'],
-    };
+    const INVOICE_UUID = new URLSearchParams(window.location.search).get('invoice_uuid') || '';
+    const CHECK_URL = `/api/v1/payment/check_invoice?invoice_uuid=${INVOICE_UUID}`;
 
-    let step = 0;
-    let timerInterval;
     let zoomed = false;
+    let timerInterval;
 
     const $ = (id) => document.getElementById(id);
     const spinner = $('spinner');
@@ -276,6 +271,10 @@
     const checkBtn = $('check-btn');
     const qrWrap = $('qr-wrap');
     const addressDisplay = $('address-display');
+    const amountDisplay = $('amount-display');
+    const currencyDisplay = $('currency-display');
+
+    let currentData = null;
 
     function showToast(msg) {
       toast.textContent = msg;
@@ -294,17 +293,54 @@
       }
     }
 
-    function advanceMockStatus() {
-      if (step >= MOCK.statuses.length) return;
-      setStatus(MOCK.statuses[step]);
-      step++;
+    function updateUI(data) {
+      currentData = data;
+
+      if (!addressDisplay.textContent) {
+        // first load — set everything
+        addressDisplay.textContent = data.wallet_address;
+        const amt = parseFloat(data.amount_requested).toFixed(data.amount_requested.includes('.') ? (data.amount_requested.split('.')[1]?.length || 2) : 2);
+        amountDisplay.innerHTML = `${amt} <span>${data.payment_status === 'confirmed' ? data.amount_received : data.amount_requested}</span>`;
+        currencyDisplay.textContent = data.currency;
+
+        // QR code
+        const qrImg = document.createElement('img');
+        qrImg.src = `/api/v1/qr?size=140x140&data=${encodeURIComponent(data.wallet_address)}`;
+        qrImg.alt = 'Payment QR Code';
+        qrWrap.innerHTML = '';
+        qrWrap.appendChild(qrImg);
+
+        // Copy amount: copy the requested amount
+        $('copy-amount-btn').onclick = () => {
+          navigator.clipboard.writeText(data.amount_requested).then(() => showToast('Amount copied!'));
+        };
+      }
+
+      setStatus(data.payment_status);
     }
 
-    // QR code
-    const qrImg = document.createElement('img');
-    qrImg.src = `/api/v1/qr?size=140x140&data=${encodeURIComponent(MOCK.address)}`;
-    qrImg.alt = 'Payment QR Code';
-    qrWrap.appendChild(qrImg);
+    async function checkStatus() {
+      checkBtn.classList.add('loading');
+      checkBtn.innerHTML = '<span class="spin-sm"></span> Checking...';
+      try {
+        const resp = await fetch(CHECK_URL);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const data = await resp.json();
+        updateUI(data);
+      } catch (e) {
+        statusText.textContent = 'Error checking payment';
+      } finally {
+        checkBtn.classList.remove('loading');
+        checkBtn.innerHTML = 'Check Now';
+      }
+    }
+
+    // Copy address
+    $('copy-btn').addEventListener('click', () => {
+      if (currentData) {
+        navigator.clipboard.writeText(currentData.wallet_address).then(() => showToast('Address copied!'));
+      }
+    });
 
     // QR zoom toggle
     qrWrap.addEventListener('click', () => {
@@ -313,10 +349,11 @@
         if (overlay) overlay.remove();
         zoomed = false;
       } else {
+        if (!currentData) return;
         const overlay = document.createElement('div');
         overlay.className = 'qr-overlay';
         const bigImg = document.createElement('img');
-        bigImg.src = `/api/v1/qr?size=400x400&data=${encodeURIComponent(MOCK.address)}`;
+        bigImg.src = `/api/v1/qr?size=400x400&data=${encodeURIComponent(currentData.wallet_address)}`;
         bigImg.alt = 'Payment QR Code';
         overlay.appendChild(bigImg);
         overlay.addEventListener('click', () => {
@@ -328,26 +365,24 @@
       }
     });
 
-    // Copy address
-    $('copy-btn').addEventListener('click', () => {
-      navigator.clipboard.writeText(MOCK.address).then(() => showToast('Address copied!'));
-    });
-
-    // Copy amount
-    $('copy-amount-btn').addEventListener('click', () => {
-      navigator.clipboard.writeText(MOCK.amount).then(() => showToast('Amount copied!'));
-    });
-
     // Check now
-    checkBtn.addEventListener('click', () => {
-      checkBtn.classList.add('loading');
-      checkBtn.innerHTML = '<span class="spin-sm"></span> Checking...';
-      setTimeout(() => {
-        advanceMockStatus();
-        checkBtn.classList.remove('loading');
-        checkBtn.innerHTML = 'Check Now';
-      }, 800);
-    });
+    checkBtn.addEventListener('click', checkStatus);
+
+    // Auto-poll on load
+    checkStatus();
+
+    // Auto-poll every 10 seconds
+    timerInterval = setInterval(() => {
+      if (currentData && currentData.payment_status === 'confirmed') {
+        clearInterval(timerInterval);
+        return;
+      }
+      // silent background check without UI spinner
+      fetch(CHECK_URL)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data) updateUI(data); })
+        .catch(() => {});
+    }, 10000);
   </script>
 </body>
 

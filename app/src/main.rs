@@ -6,6 +6,7 @@ use routes::dashboard;
 use routes::iframe_v1;
 use routes::dashboard_api;
 use routes::deposit;
+use routes::payment;
 use routes::qr;
 use routes::withdraw;
 use sea_orm::{Database, DatabaseConnection};
@@ -131,6 +132,7 @@ async fn main() -> Result<(), Error> {
     let (api_router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
         .nest("/api/v1/auth", auth::router())
         .nest("/api/v1/deposit", deposit::router())
+        .nest("/api/v1/payment", payment::router())
         .with_state(state.clone())
         .split_for_parts();
 
