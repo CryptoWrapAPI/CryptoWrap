@@ -9,7 +9,8 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Withdrawals::Table) // only broadcasted/relayed txs are going in the withdrawals db table
+                    // .table(Withdrawals::Table) // only broadcasted/relayed txs are going in the withdrawals db table
+                    .table("withdrawals")
                     .if_not_exists()
                     .col(
                         uuid("transaction_id")
@@ -35,12 +36,13 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Withdrawals::Table).to_owned())
+            // .drop_table(Table::drop().table(Withdrawals::Table).to_owned())
+            .drop_table(Table::drop().table("withdrawals").to_owned())
             .await
     }
 }
 
-#[derive(DeriveIden)]
-enum Withdrawals {
-    Table,
-}
+// #[derive(DeriveIden)]
+// enum Withdrawals {
+//     Table,
+// }

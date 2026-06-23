@@ -3,19 +3,19 @@ use sea_orm_migration::{prelude::*, schema::*};
 #[derive(DeriveMigrationName)]
 pub struct Migration;
 
-#[derive(DeriveIden)]
-enum LitecoinWallet {
-    Table,
-    // Id,
-    // AccountIndex,
-    // AddressIndex,
-    // WalletAddress,
-    // CreatedAt,
-    // LastUsedAt,
-    // BlockchainHeight,
-    // IsAvailable,
-    // IsChange,
-}
+// #[derive(DeriveIden)]
+// enum LitecoinWallet {
+//     Table,
+//     // Id,
+//     // AccountIndex,
+//     // AddressIndex,
+//     // WalletAddress,
+//     // CreatedAt,
+//     // LastUsedAt,
+//     // BlockchainHeight,
+//     // IsAvailable,
+//     // IsChange,
+// }
 
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
@@ -23,7 +23,8 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(LitecoinWallet::Table)
+                    // .table(LitecoinWallet::Table)
+                    .table("litecoin_wallet")
                     .if_not_exists()
                     .col(integer("id").primary_key().auto_increment())
                     .col(integer("account_index").not_null())
@@ -64,7 +65,8 @@ impl MigrationTrait for Migration {
             .await?;
 
         manager
-            .drop_table(Table::drop().table(LitecoinWallet::Table).to_owned())
+            // .drop_table(Table::drop().table(LitecoinWallet::Table).to_owned())
+            .drop_table(Table::drop().table("litecoin_wallet").to_owned())
             .await
     }
 }

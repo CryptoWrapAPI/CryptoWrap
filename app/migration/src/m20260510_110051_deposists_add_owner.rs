@@ -9,7 +9,8 @@ impl MigrationTrait for Migration {
         manager
             .alter_table(
                 Table::alter()
-                    .table(Deposits::Table)
+                    // .table(Deposits::Table)
+                    .table("deposits")
                     // uuid from tokens table (not foreign key, simple uuid-string field) //
                     .add_column(uuid("owner_id").not_null())
                     .to_owned(),
@@ -21,16 +22,18 @@ impl MigrationTrait for Migration {
         manager
             .alter_table(
                 Table::alter()
-                    .table(Deposits::Table)
-                    .drop_column(Deposits::OwnerId)
+                    // .table(Deposits::Table)
+                    .table("deposits")
+                    // .drop_column(Deposits::OwnerId)
+                    .drop_column("owner_id")
                     .to_owned(),
             )
             .await
     }
 }
 
-#[derive(DeriveIden)]
-enum Deposits {
-    Table,
-    OwnerId,
-}
+// #[derive(DeriveIden)]
+// enum Deposits {
+//     Table,
+//     OwnerId,
+// }

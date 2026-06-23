@@ -9,7 +9,8 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(MoneroWallet::Table)
+                    // .table(MoneroWallet::Table)
+                    .table("monero_wallet")
                     .if_not_exists()
                     .col(integer("id").primary_key().auto_increment())
                     .col(integer("major_index").not_null())
@@ -34,20 +35,13 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(MoneroWallet::Table).to_owned())
+            // .drop_table(Table::drop().table(MoneroWallet::Table).to_owned())
+            .drop_table(Table::drop().table("monero_wallet").to_owned())
             .await
     }
 }
 
-#[derive(DeriveIden)]
-enum MoneroWallet {
-    Table,
-    // Id,
-    // MajorIndex,
-    // MinorIndex,
-    // WalletAddress,
-    // CreatedAt,
-    // LastUsedAt,
-    // BlockchainHeight,
-    // IsAvailable,
-}
+// #[derive(DeriveIden)]
+// enum MoneroWallet {
+//     Table,
+// }

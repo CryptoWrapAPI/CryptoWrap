@@ -9,7 +9,8 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Deposits::Table)
+                    // .table(Deposits::Table)
+                    .table("deposits")
                     .if_not_exists()
                     .col(
                         uuid("deposit_id")
@@ -59,23 +60,24 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Deposits::Table).to_owned())
+            .drop_table(Table::drop().table("deposits").to_owned())
+            // .drop_table(Table::drop().table(Deposits::Table).to_owned())
             .await
     }
 }
 
-#[derive(DeriveIden)]
-enum Deposits {
-    Table,
-    // DepositId,
-    // Currency,
-    // Network,
-    // WalletAddress,
-    // AmountReceived,
-    // PaymentStatus,
-    // Confirmations,
-    // CreatedAt,
-    // UpdatedAt,
-    // Txids,
-    // Finalized,
-}
+// #[derive(DeriveIden)]
+// enum Deposits {
+//     Table,
+//     // DepositId,
+//     // Currency,
+//     // Network,
+//     // WalletAddress,
+//     // AmountReceived,
+//     // PaymentStatus,
+//     // Confirmations,
+//     // CreatedAt,
+//     // UpdatedAt,
+//     // Txids,
+//     // Finalized,
+// }
