@@ -1,9 +1,9 @@
 #!/bin/bash
-# scp -r scripts/ spb:/cryptowrap/
-scp -r app/assets/ spb:/cryptowrap/app/
+# scp -r scripts/ x10:/home/CryptoWrap
+scp -r app/static/ x10:/home/CryptoWrap
 
 # restart docker container `main-cw` to apply
-scp app/target/release/app spb:/cryptowrap/app/release-cw
+scp app/target/release/app x10:/home/CryptoWrap/app/release-cw
 # restart nginx to apply
 # scp nginx/nginx_default.conf spb:/etc/nginx/conf.d/default.conf
 # after first copy, issue a tls sertificate using certbot
