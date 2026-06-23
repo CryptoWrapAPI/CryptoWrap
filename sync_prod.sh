@@ -1,6 +1,6 @@
 #!/bin/bash
 # scp -r scripts/ x10:/home/CryptoWrap
-scp -r app/static/ x10:/home/CryptoWrap
+scp -r app/static/ x10:/home/CryptoWrap/app
 
 # restart docker container `main-cw` to apply
 scp app/target/release/app x10:/home/CryptoWrap/app/release-cw

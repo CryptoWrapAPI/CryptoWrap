@@ -5,7 +5,7 @@ use crate::entity::prelude::*;
 use crate::entity::{litecoin_wallet, monero_wallet};
 use crate::routes::auth_helper::extract_user_row;
 use crate::routes::deposit::{Currency, Network};
-use crate::routes::fiat::{convert_from_fiat, convert_to_fiat, FiatCurrency};
+use crate::routes::fiat::{FiatCurrency, convert_from_fiat, convert_to_fiat};
 use crate::routes::notify_helper::notify_shop;
 use crate::wallet::litecoin::litoshi_to_ltc;
 use crate::wallet::litecoin_helper;
@@ -27,7 +27,7 @@ use uuid::Uuid;
     "wallet_address":"46QYvqx4Z8JKk26DVyNbFjMgFqXyrXgAb3W8kEHBiSN78XrcoPRHk4ATjoCJ9eia5MVQMxDdQ6nAaa2D9MgLgZV31V2bCRS",
     "amount_requested":"1.5",
     "currency":"XMR",
-    "iframe_url":"https://example.com/iframe/v1?invoice_uuid=3f270a5a-50be-4ad7-9f01-fffc2c5144b3",
+    "iframe_url":"https://c-w.cv/iframe/v1?invoice_uuid=3f270a5a-50be-4ad7-9f01-fffc2c5144b3",
 }))]
 pub struct CreateInvoiceResponse {
     #[schema(value_type = String)]
@@ -95,7 +95,10 @@ pub async fn create_invoice(
                 .parse()
                 .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid crypto amount".to_string()))?;
             if amt <= Decimal::ZERO {
-                return Err((StatusCode::BAD_REQUEST, "Amount must be positive".to_string()));
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "Amount must be positive".to_string(),
+                ));
             }
             amt
         }
@@ -106,20 +109,29 @@ pub async fn create_invoice(
                 .parse()
                 .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid fiat amount".to_string()))?;
             if fiat_amt <= Decimal::ZERO {
-                return Err((StatusCode::BAD_REQUEST, "Fiat amount must be positive".to_string()));
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "Fiat amount must be positive".to_string(),
+                ));
             }
 
             let coin = invoice_request.currency.to_string().to_lowercase();
             convert_from_fiat(&state.conn, fiat_amt, &coin, fiat_curr.clone())
                 .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Pricing error: {}", e)))?
+                .map_err(|e| {
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Pricing error: {}", e),
+                    )
+                })?
         }
 
         // Case 3: Invalid - both specified
         (Some(_), Some(_), _) => {
             return Err((
                 StatusCode::BAD_REQUEST,
-                "Ambiguous request. Provide either 'amount' OR 'fiat_amount', not both.".to_string(),
+                "Ambiguous request. Provide either 'amount' OR 'fiat_amount', not both."
+                    .to_string(),
             ));
         }
 
@@ -127,7 +139,8 @@ pub async fn create_invoice(
         (None, None, _) => {
             return Err((
                 StatusCode::BAD_REQUEST,
-                "Missing payment value. You must provide either 'amount' or 'fiat_amount'.".to_string(),
+                "Missing payment value. You must provide either 'amount' or 'fiat_amount'."
+                    .to_string(),
             ));
         }
 
@@ -363,7 +376,11 @@ pub async fn check_invoice(
 
         let transactions: Option<Vec<String>> = invoice.transactions.as_ref().map(|t| {
             t.as_array()
-                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                        .collect()
+                })
                 .unwrap_or_default()
         });
 
@@ -417,7 +434,8 @@ pub async fn check_invoice(
 
             // For invoices, check if amount_received meets or exceeds amount_requested
             let meets_request = meets_or_exceeds(&result.amount_received, amount_requested);
-            let invoice_paid = meets_request && result.confirmations.map(|c| c >= 10).unwrap_or(false);
+            let invoice_paid =
+                meets_request && result.confirmations.map(|c| c >= 10).unwrap_or(false);
 
             let status = if invoice_paid {
                 "confirmed"
@@ -533,8 +551,12 @@ pub async fn check_invoice(
 
     // set transactions if we have them
     if let Some(txids_list) = &txids {
-        let txids_json: serde_json::Value =
-            serde_json::Value::Array(txids_list.iter().map(|t| serde_json::Value::String(t.clone())).collect());
+        let txids_json: serde_json::Value = serde_json::Value::Array(
+            txids_list
+                .iter()
+                .map(|t| serde_json::Value::String(t.clone()))
+                .collect(),
+        );
         invoice_active_model.transactions = Set(Some(txids_json));
     }
 
