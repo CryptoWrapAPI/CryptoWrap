@@ -1,6 +1,6 @@
 use crate::AppState;
-use crate::entity::litecoin_wallet as litecoin_wallet_entity;
-use crate::entity::tokens;
+use crate::entity::prelude::*;
+use crate::entity::litecoin_wallet;
 use crate::wallet::litecoin as litecoin_wallet_module;
 use crate::wallet::litecoin_helper;
 use crate::wallet::monero as monero_wallet_module;
@@ -45,7 +45,7 @@ async fn get_balance(
 
         match token_id_str.parse::<Uuid>() {
             Ok(token_id) => {
-                match tokens::Entity::find_by_id(token_id).one(&state.conn).await {
+                match Tokens::find_by_id(token_id).one(&state.conn).await {
                     Ok(Some(token)) => {
                         // User identified successfully
                         // Continue to balance fetching
@@ -144,14 +144,14 @@ async fn get_balance(
             //
 
             // get addresses from litecoin_wallet with keep_track TRUE and is_change TRUE -- of current user
-            let addresses: Vec<String> = litecoin_wallet_entity::Entity::find()
-                .filter(litecoin_wallet_entity::Column::AccountIndex.eq(ltc_acc_index as i32))
-                // .filter(litecoin_wallet_entity::Column::KeepTrack.eq(true))
-                // .filter(litecoin_wallet_entity::Column::IsChange.eq(true))
+            let addresses: Vec<String> = LitecoinWallet::find()
+                .filter(litecoin_wallet::Column::AccountIndex.eq(ltc_acc_index as i32))
+                // .filter(litecoin_wallet::Column::KeepTrack.eq(true))
+                // .filter(litecoin_wallet::Column::IsChange.eq(true))
                 .filter(
-                    litecoin_wallet_entity::Column::KeepTrack
+                    litecoin_wallet::Column::KeepTrack
                         .eq(true)
-                        .or(litecoin_wallet_entity::Column::IsChange.eq(true)),
+                        .or(litecoin_wallet::Column::IsChange.eq(true)),
                 )
                 // .select_only()
                 // .column(litecoin_wallet_entity::Column::WalletAddress)

@@ -11,7 +11,8 @@ use hyper::StatusCode;
 use uuid::Uuid;
 // use tower_cookies::Cookies;
 use crate::AppState;
-use crate::entity::{deposits, tokens};
+use crate::entity::prelude::*;
+use crate::entity::deposits;
 use axum::extract::State;
 use sea_orm::{ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter};
 
@@ -49,7 +50,7 @@ async fn dashboard(state: State<AppState>, jar: PrivateCookieJar) -> (PrivateCoo
 
         match token_id_str.parse::<Uuid>() {
             Ok(token_id) => {
-                match tokens::Entity::find_by_id(token_id).one(&state.conn).await {
+                match Tokens::find_by_id(token_id).one(&state.conn).await {
                     Ok(Some(token)) => {
                         // user identified
                         println!("Found token: {:?}", token);
@@ -98,13 +99,13 @@ async fn dashboard(state: State<AppState>, jar: PrivateCookieJar) -> (PrivateCoo
 
     let member_since = user_token_entry.created_at.format("%Y-%m-%d").to_string();
 
-    let deposit_requests_count = deposits::Entity::find()
+    let deposit_requests_count = Deposits::find()
         .filter(deposits::Column::OwnerId.eq(user_token_entry.id))
         .count(&state.conn)
         .await
         .unwrap_or(0)
         .to_string();
-    let successful_deposits_count = deposits::Entity::find()
+    let successful_deposits_count = Deposits::find()
         .filter(deposits::Column::OwnerId.eq(user_token_entry.id))
         .filter(deposits::Column::PaymentStatus.eq("confirmed"))
         .count(&state.conn)

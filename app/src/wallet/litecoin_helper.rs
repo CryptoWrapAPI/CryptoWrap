@@ -1,6 +1,7 @@
+use crate::entity::prelude::*;
 use crate::entity::litecoin_wallet::{self, ActiveModel as LitecoinWalletActiveModel, Column as LitecoinWalletColumn};
 use crate::entity::tokens::{self, ActiveModel as TokensActiveModel};
-use crate::wallet::litecoin::{AddressPair, LitecoinError, LitecoinWallet};
+use crate::wallet::litecoin::{AddressPair, LitecoinError, LitecoinRpc};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QuerySelect, Set,
 };
@@ -45,14 +46,14 @@ impl From<sea_orm::DbErr> for LitecoinHelperError {
 /// Returns the account index.
 pub async fn ensure_litecoin_account_index_for_user(
     user_row: &tokens::Model,
-    litecoin_wallet_client: &LitecoinWallet,
+    litecoin_wallet_client: &LitecoinRpc,
     conn: &DatabaseConnection,
 ) -> Result<u32, LitecoinHelperError> {
     if let Some(account_index) = user_row.litecoin_account_index {
         Ok(account_index as u32)
     } else {
         // Get the highest used account index from the database
-        let max_account_index = litecoin_wallet::Entity::find()
+        let max_account_index = LitecoinWallet::find()
             .select_only()
             .column_as(litecoin_wallet::Column::AccountIndex.max(), "max_index")
             .into_model::<MaxIndexResult>()
@@ -95,7 +96,7 @@ pub async fn ensure_litecoin_account_index_for_user(
 /// it creates a new one via the Litecoin API and stores it.
 pub async fn get_free_litecoin_address_with_account_index(
     account_index: u32,
-    litecoin_wallet_client: &LitecoinWallet,
+    litecoin_wallet_client: &LitecoinRpc,
     conn: &DatabaseConnection,
 ) -> Result<String, LitecoinHelperError> {
     // Get blockchain height
@@ -103,7 +104,7 @@ pub async fn get_free_litecoin_address_with_account_index(
 
     // 1. Search for an existing available address in the database
     loop {
-        if let Some(available_address_model) = litecoin_wallet::Entity::find()
+        if let Some(available_address_model) = LitecoinWallet::find()
             .filter(litecoin_wallet::Column::AccountIndex.eq(account_index as i32))
             .filter(litecoin_wallet::Column::IsAvailable.eq(true))
             .filter(litecoin_wallet::Column::IsChange.eq(false))
@@ -148,7 +149,7 @@ pub async fn get_free_litecoin_address_with_account_index(
     }
 
     // 3. No available address — derive the next one
-    let max_address_index = litecoin_wallet::Entity::find()
+    let max_address_index = LitecoinWallet::find()
         .filter(litecoin_wallet::Column::AccountIndex.eq(account_index as i32))
         .filter(litecoin_wallet::Column::IsChange.eq(false))
         .select_only()
@@ -214,7 +215,7 @@ fn validate_ltc_address(address: &str) -> Result<(), LitecoinHelperError> {
 /// finds the change address, and calls the build-and-send RPC.
 /// After a successful transaction, marks all used addresses as keep_track = false.
 pub async fn transfer_ltc(
-    wallet: &LitecoinWallet,
+    wallet: &LitecoinRpc,
     destination_address: &str,
     amount_litoshi: u64,
     account_index: u32,
@@ -225,7 +226,7 @@ pub async fn transfer_ltc(
     let account_index_i32 = account_index as i32;
 
     // Get all addresses for this account
-    let all_addresses = litecoin_wallet::Entity::find()
+    let all_addresses = LitecoinWallet::find()
         .filter(LitecoinWalletColumn::AccountIndex.eq(account_index_i32))
         .all(conn)
         .await?;

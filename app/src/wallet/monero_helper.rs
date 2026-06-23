@@ -1,6 +1,7 @@
+use crate::entity::prelude::*;
 use crate::entity::monero_wallet::{self, ActiveModel as MoneroWalletActiveModel};
 use crate::entity::tokens::{self, ActiveModel as TokensActiveModel};
-use crate::wallet::monero::{self, MoneroError, MoneroWallet};
+use crate::wallet::monero::{self, MoneroError, MoneroRpc};
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter, Result as FmtResult};
@@ -45,7 +46,7 @@ fn validate_monero_address(address: &str) -> Result<(), MoneroHelperError> {
 // this would require to send N% of the tx volume to this address, it will act as additional tx fee
 // and naturally return error if user has exactly 100% and covered fee, so they would use 99.99% of total amount to successfully withdraw
 pub async fn transfer_xmr(
-    wallet: &MoneroWallet,
+    wallet: &MoneroRpc,
     destination_address: &str,
     amount_atomic: u64,
     account_index: u32,
@@ -113,7 +114,7 @@ pub struct DepositCheckResult {
 /// Returns the major wallet index.
 pub async fn ensure_monero_major_wallet_index_for_user(
     user_row: &tokens::Model,
-    monero_wallet_client: &MoneroWallet,
+    monero_wallet_client: &MoneroRpc,
     conn: &DatabaseConnection,
 ) -> Result<u32, MoneroHelperError> {
     if let Some(major_index) = user_row.monero_major_index {
@@ -144,7 +145,7 @@ pub async fn ensure_monero_major_wallet_index_for_user(
 /// it creates a new one via Monero RPC and stores it.
 pub async fn get_free_monero_subaddress_with_major_index(
     major_index: u32,
-    monero_wallet_client: &MoneroWallet,
+    monero_wallet_client: &MoneroRpc,
     conn: &DatabaseConnection,
     // ) -> Result<(String, i32), MoneroHelperError> {
 ) -> Result<String, MoneroHelperError> {
@@ -154,7 +155,7 @@ pub async fn get_free_monero_subaddress_with_major_index(
     let height = blockchain_height.height;
 
     // 1. Search for an existing available address in the database
-    if let Some(available_address_model) = monero_wallet::Entity::find()
+    if let Some(available_address_model) = MoneroWallet::find()
         .filter(monero_wallet::Column::MajorIndex.eq(major_index as i32))
         .filter(monero_wallet::Column::IsAvailable.eq(true))
         .one(conn)
@@ -199,7 +200,7 @@ pub async fn get_free_monero_subaddress_with_major_index(
 }
 
 pub async fn check_for_inbound_transfers_confirmed_or_mempool_with_min_height(
-    monero_wallet_client: &MoneroWallet,
+    monero_wallet_client: &MoneroRpc,
     account_index: i32,
     subaddress_index: i32,
     min_height: i32,

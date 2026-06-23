@@ -70,9 +70,9 @@ async fn main() -> Result<(), Error> {
         token_prefix,
         blake3_hash_token_pepper,
         cookie_key,
-        monero_wallet: wallet::monero::MoneroWallet::new(&monero_wallet_rpc_address),
+        monero_wallet: wallet::monero::MoneroRpc::new(&monero_wallet_rpc_address),
         litecoin_wallet: {
-            let mut wallet = wallet::litecoin::LitecoinWallet::new(&ltc_api_url, &ltc_mpk);
+            let mut wallet = wallet::litecoin::LitecoinRpc::new(&ltc_api_url, &ltc_mpk);
             wallet.set_master_private_key(&ltc_mpk);
             wallet
         },
@@ -159,8 +159,8 @@ struct AppState {
     token_prefix: String,
     blake3_hash_token_pepper: String,
     cookie_key: Key,
-    monero_wallet: wallet::monero::MoneroWallet,
-    litecoin_wallet: wallet::litecoin::LitecoinWallet,
+    monero_wallet: wallet::monero::MoneroRpc,
+    litecoin_wallet: wallet::litecoin::LitecoinRpc,
     current_url: String,
     // tg_notificator: Notifier, // add easy switch to enable/disable notification
 }

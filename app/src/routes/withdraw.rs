@@ -1,4 +1,5 @@
 use crate::AppState;
+use crate::entity::prelude::*;
 use crate::entity::{tokens, withdrawals};
 use crate::wallet::litecoin as litecoin_wallet_module;
 use crate::wallet::litecoin_helper;
@@ -208,7 +209,7 @@ async fn get_authenticated_token(
         )
     })?;
 
-    tokens::Entity::find_by_id(token_id)
+    Tokens::find_by_id(token_id)
         .one(&state.conn)
         .await
         .map_err(|_| {

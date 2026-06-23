@@ -1,5 +1,6 @@
 use crate::AppState;
 use crate::PAYMENT_TAG;
+use crate::entity::prelude::*;
 use crate::entity::{deposits, fiat_prices, litecoin_wallet, monero_wallet};
 use crate::routes::auth_helper::extract_user_row;
 use crate::wallet::litecoin::litoshi_to_ltc;
@@ -186,7 +187,7 @@ pub async fn check(
     let deposit_uuid = deposit_request.deposit_uuid;
 
     // 1. Get deposit entry from database
-    let deposit = deposits::Entity::find()
+    let deposit = Deposits::find()
         .filter(deposits::Column::DepositId.eq(deposit_uuid))
         .one(&state.conn)
         .await
@@ -230,7 +231,7 @@ pub async fn check(
         if deposit.currency.to_uppercase() == "XMR" {
             // Xmr
             // === MONERO ===
-            let address_entry = monero_wallet::Entity::find()
+            let address_entry = MoneroWallet::find()
                 .filter(monero_wallet::Column::WalletAddress.eq(&wallet_address))
                 .one(&state.conn)
                 .await
@@ -269,7 +270,7 @@ pub async fn check(
         } else if deposit.currency.to_uppercase() == "LTC" {
             // Ltc
             // === LITECOIN ===
-            let ltc_entry = litecoin_wallet::Entity::find()
+            let ltc_entry = LitecoinWallet::find()
                 .filter(litecoin_wallet::Column::WalletAddress.eq(&wallet_address))
                 .one(&state.conn)
                 .await
@@ -592,7 +593,7 @@ pub async fn convert_to_fiat(
     let crypto_amount: Decimal = crypto_amount.parse().ok()?;
     let coin_id = currency_to_coin_id(coin);
 
-    let price = fiat_prices::Entity::find()
+    let price = FiatPrices::find()
         .filter(fiat_prices::Column::Coin.eq(&coin_id))
         .one(conn)
         .await

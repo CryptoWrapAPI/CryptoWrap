@@ -16,7 +16,7 @@ pub enum LitecoinError {
 }
 
 #[derive(Clone)]
-pub struct LitecoinWallet {
+pub struct LitecoinRpc {
     client: Client,
     api_url: String,
     master_public_key: String,
@@ -32,7 +32,7 @@ fn extract_detail(body: &str) -> String {
     body.to_string()
 }
 
-impl LitecoinWallet {
+impl LitecoinRpc {
     pub fn new(api_url: &str, master_public_key: &str) -> Self {
         Self {
             client: Client::new(),

@@ -16,12 +16,12 @@ pub enum MoneroError {
 }
 
 #[derive(Clone)]
-pub struct MoneroWallet {
+pub struct MoneroRpc {
     client: Client,
     url: String,
 }
 
-impl MoneroWallet {
+impl MoneroRpc {
     pub fn new(address: &str) -> Self {
         let url = format!("http://{}/json_rpc", address);
         Self {
@@ -140,7 +140,7 @@ pub struct GetTransfersResponse {
 }
 
 pub async fn get_transfers(
-    wallet: &MoneroWallet,
+    wallet: &MoneroRpc,
     params: GetTransfersParams,
 ) -> Result<GetTransfersResponse, MoneroError> {
     wallet
@@ -160,7 +160,7 @@ pub struct CreateAccountResponse {
 }
 
 pub async fn create_account(
-    wallet: &MoneroWallet,
+    wallet: &MoneroRpc,
     // label: Option<&str>,
 ) -> Result<CreateAccountResponse, MoneroError> {
     let params = CreateAccountParams {
@@ -187,7 +187,7 @@ pub struct CreateAddressResponse {
 }
 
 pub async fn create_address(
-    wallet: &MoneroWallet,
+    wallet: &MoneroRpc,
     account_index: u32,
     // label: Option<&str>,
     // count: Option<u32>,
@@ -208,12 +208,12 @@ pub struct GetHeightResponse {
     pub height: i32,
 }
 
-pub async fn get_height(wallet: &MoneroWallet) -> Result<GetHeightResponse, MoneroError> {
+pub async fn get_height(wallet: &MoneroRpc) -> Result<GetHeightResponse, MoneroError> {
     wallet.rpc_request("get_height", json!({})).await
 }
 
 pub async fn get_account_balance(
-    wallet: &MoneroWallet,
+    wallet: &MoneroRpc,
     major_index: u32,
 ) -> Result<AccountBalanceResponse, MoneroError> {
     wallet
@@ -262,7 +262,7 @@ pub struct TransferResponse {
 }
 
 pub async fn transfer(
-    wallet: &MoneroWallet,
+    wallet: &MoneroRpc,
     params: TransferParams,
 ) -> Result<TransferResponse, MoneroError> {
     wallet

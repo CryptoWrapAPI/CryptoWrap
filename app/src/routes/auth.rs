@@ -1,5 +1,6 @@
 use crate::AUTH_TAG;
 use crate::AppState;
+use crate::entity::prelude::Tokens;
 use crate::entity::tokens;
 use axum::{Json, extract::State, http::StatusCode, routing::post};
 use axum_extra::extract::{PrivateCookieJar, cookie::Cookie};
@@ -93,7 +94,7 @@ async fn login_or_register(
     let token_hash = blake3::keyed_hash(&key, token_without_prefix.as_bytes());
     let token_hash_hex = token_hash.to_hex().to_string();
 
-    let token_model = match tokens::Entity::find()
+    let token_model = match Tokens::find()
         .filter(tokens::Column::TokenHash.eq(&token_hash_hex))
         .one(&state.conn)
         .await

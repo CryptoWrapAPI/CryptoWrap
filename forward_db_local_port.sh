@@ -16,4 +16,4 @@
 # you can modify it to work in background if you wish
 
 # ssh -L 5432:127.0.0.1:5432 nakata
-ssh -L 5432:127.0.0.1:5430 spb
+ssh -L 5432:127.0.0.1:5432 x10

@@ -1,4 +1,5 @@
 use crate::AppState;
+use crate::entity::prelude::Tokens;
 use crate::entity::tokens;
 use axum::http::HeaderMap;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
@@ -18,7 +19,7 @@ pub async fn extract_user_row(state: &AppState, headers: &HeaderMap) -> Option<t
     let token_hash = blake3::keyed_hash(&key, token_without_prefix.as_bytes());
     let token_hash_hex = token_hash.to_hex().to_string();
 
-    let token_model = tokens::Entity::find()
+    let token_model = Tokens::find()
         .filter(tokens::Column::TokenHash.eq(&token_hash_hex))
         .one(&state.conn)
         .await
