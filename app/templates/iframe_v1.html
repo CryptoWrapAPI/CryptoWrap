@@ -241,35 +241,14 @@
       display: block;
     }
 
-    .error-screen {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 1rem;
-      padding-top: 4rem;
+    .spinner.error {
+      border-color: rgba(255, 80, 80, 0.15);
+      border-top-color: #ff5050;
     }
 
-    .error-screen.visible {
-      display: flex;
-    }
-
-    .error-screen .error-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: rgba(255, 80, 80, 0.15);
-      color: #ff5050;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      font-weight: 700;
-    }
-
-    .error-screen .error-msg {
-      color: #888;
-      font-size: 0.88rem;
-      text-align: center;
+    .spinner.ok {
+      border-color: rgba(34, 197, 94, 0.15);
+      border-top-color: #22c55e;
     }
   </style>
 </head>
@@ -280,11 +259,6 @@
     <div class="loading-screen" id="loading-screen">
       <div class="spinner"></div>
       <div style="color:#666;font-size:0.88rem;">Loading payment...</div>
-    </div>
-
-    <div class="error-screen" id="error-screen">
-      <div class="error-icon">!</div>
-      <div class="error-msg" id="error-msg">Payment not found.</div>
     </div>
 
     <div class="payment-content" id="payment-content">
@@ -321,11 +295,10 @@
 
     let zoomed = false;
     let timerInterval;
+    let isChecking = false;
 
     const $ = (id) => document.getElementById(id);
     const loadingScreen = $('loading-screen');
-    const errorScreen = $('error-screen');
-    const errorMsg = $('error-msg');
     const paymentContent = $('payment-content');
     const spinner = $('spinner');
     const statusText = $('status-text');
@@ -371,6 +344,14 @@
       } else {
         doCopy();
       }
+    }
+
+    let statusRevertTimer;
+
+    function revertStatus() {
+      if (currentData && currentData.payment_status === 'confirmed') return;
+      spinner.className = 'spinner';
+      statusText.textContent = 'Waiting for payment...';
     }
 
     function setStatus(status) {
@@ -420,35 +401,68 @@
       setStatus(data.payment_status);
     }
 
-    function showError(msg) {
-      loadingScreen.style.display = 'none';
-      errorMsg.textContent = msg;
-      errorScreen.classList.add('visible');
-      if (timerInterval) clearInterval(timerInterval);
+    function showPaymentContent() {
+      if (!paymentContent.classList.contains('ready')) {
+        loadingScreen.style.display = 'none';
+        paymentContent.style.display = 'block';
+      }
+    }
+
+    function showBriefStatus(className, text) {
+      if (statusRevertTimer) clearTimeout(statusRevertTimer);
+      spinner.className = 'spinner ' + className;
+      statusText.textContent = text;
+      statusRevertTimer = setTimeout(revertStatus, 2000);
     }
 
     async function checkStatus() {
+      if (isChecking) return;
+      isChecking = true;
       checkBtn.classList.add('loading');
       checkBtn.innerHTML = '<span class="spin-sm"></span> Checking...';
+      statusText.textContent = 'Checking...';
       try {
         const resp = await fetch(CHECK_URL);
-        if (!resp.ok) {
-          if (resp.status === 404) throw new Error('Invoice not found');
-          throw new Error('Error loading payment');
+        showPaymentContent();
+        if (resp.ok) {
+          const data = await resp.json();
+          updateUI(data);
+          if (data.payment_status === 'confirmed') {
+            // setStatus already handled this permanently
+          } else if (data.payment_status === 'detected') {
+            // setStatus already handled this permanently
+          } else {
+            showBriefStatus('ok', 'No payment yet');
+          }
+        } else {
+          showBriefStatus('error', 'Check failed');
         }
-        const data = await resp.json();
-        updateUI(data);
       } catch (e) {
-        showError(e.message);
+        showPaymentContent();
+        showBriefStatus('error', 'Network error');
       } finally {
+        isChecking = false;
         checkBtn.classList.remove('loading');
         checkBtn.innerHTML = 'Check Now';
       }
     }
 
+    function startTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        if (currentData && currentData.payment_status === 'confirmed') {
+          clearInterval(timerInterval);
+          return;
+        }
+        checkStatus();
+      }, 10000);
+    }
+
     // Initialise
     if (!INVOICE_UUID) {
-      showError('Missing invoice ID.');
+      loadingScreen.style.display = 'none';
+      spinner.className = 'spinner error';
+      statusText.textContent = 'Missing invoice ID';
     } else {
       // Copy address
       $('copy-btn').addEventListener('click', () => {
@@ -480,23 +494,16 @@
         }
       });
 
-      // Check now
-      checkBtn.addEventListener('click', checkStatus);
+      // Check now — resets timer to prevent overlap
+      checkBtn.addEventListener('click', () => {
+        if (isChecking) return;
+        startTimer();
+        checkStatus();
+      });
 
       // Auto-poll on load
       checkStatus();
-
-      // Auto-poll every 10 seconds
-      timerInterval = setInterval(() => {
-        if (currentData && currentData.payment_status === 'confirmed') {
-          clearInterval(timerInterval);
-          return;
-        }
-        fetch(CHECK_URL)
-          .then(r => r.ok ? r.json() : null)
-          .then(data => { if (data) updateUI(data); })
-          .catch(() => {});
-      }, 10000);
+      startTimer();
     }
   </script>
 </body>
